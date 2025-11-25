@@ -1,0 +1,22 @@
+# Binaries
+backend/mysh
+backend/shell.exe
+*.o
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
