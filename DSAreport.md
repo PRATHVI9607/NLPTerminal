@@ -54,7 +54,7 @@ This project implements a small custom shell (`mysh`) in C with a Python Tkinter
   - `bool search_trie(TrieNode *root, const char *key)` — checks membership.
   - `void get_suggestions(TrieNode *root, const char *prefix, char **results, int *count)` — fills results with strdup'd strings.
 
-- Complexity:
+- Complexity:-
   - insert/search: O(L) where L = length of word.
   - get_suggestions: O(P + R * Lavg) where P = length of prefix, R = number of results, Lavg = average suffix length; traversal collects words recursively.
 
