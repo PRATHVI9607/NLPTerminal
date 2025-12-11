@@ -89,7 +89,7 @@ int main() {
     init_macros();
     
     // Populate trie and bktree with common commands
-    const char *commands[] = {"dir", "cd", "exit", "history", "help", "whoami", "copy", "del", "mkdir", "move", "undo", "macro", "ls", "pwd", "clear"};
+    const char *commands[] = {"dir", "cd", "exit", "history", "help", "whoami", "copy", "del", "mkdir", "move", "undo", "macro", "ls", "pwd", "clear", "rm", "rmdir", "touch", "cat", "cp", "mv", "echo", "tree", "search", "backup", "compare", "stats", "bookmark", "recent", "bulk_rename"};
     int num_commands = sizeof(commands) / sizeof(commands[0]);
     
     for (int i = 0; i < num_commands; i++) {
@@ -156,10 +156,21 @@ void execute_line(char *cmd, History *history, TrieNode *trie, BKTreeNode *bktre
         printf("  cp <src> <dst> - copy file\n");
         printf("  mv <src> <dst> - move file\n");
         printf("  echo <args> - print arguments\n");
+        printf("\ncustom commands:\n");
+        printf("  tree [dir]  - display directory tree\n");
+        printf("  search <pattern> - search files for pattern\n");
+        printf("  backup <file> - create timestamped backup\n");
+        printf("  compare <f1> <f2> - compare two files\n");
+        printf("  stats       - show shell statistics\n");
+        printf("  sysmon      - system resource monitor (CPU, Memory, Disk, Processes)\n");
+        printf("  bookmark [name] [path] - manage bookmarks\n");
+        printf("  recent      - show recently modified files\n");
+        printf("  bulk_rename <pattern> <replacement> - rename multiple files\n");
+        printf("\nother:\n");
         printf("  exit        - exit the shell\n");
         printf("  history     - show command history\n");
         printf("  teach [on|off] - enable/disable teaching mode\n");
-        printf("  undo        - undo last command (if supported)\n");
+        printf("  undo        - undo last command\n");
         printf("  macro       - manage macros\n");
         return;
     }
@@ -178,13 +189,7 @@ void execute_line(char *cmd, History *history, TrieNode *trie, BKTreeNode *bktre
     }
     
     if (strcmp(cmd, "undo") == 0) {
-        char *last_cmd = pop_undo(undo_stack);
-        if (last_cmd) {
-            printf("Undoing last command: %s\n", last_cmd);
-            free(last_cmd);
-        } else {
-            printf("Nothing to undo.\n");
-        }
+        execute_undo(undo_stack);
         return;
     }
     
@@ -256,17 +261,55 @@ void execute_line(char *cmd, History *history, TrieNode *trie, BKTreeNode *bktre
     }
 
     // Handle cd command internally
-    // Check for new built-in commands
+    // Check for built-in commands
     if (strcmp(args[0], "ls") == 0) { do_ls(args); return; }
     if (strcmp(args[0], "pwd") == 0) { do_pwd(args); return; }
-    if (strcmp(args[0], "mkdir") == 0) { do_mkdir(args); return; }
-    if (strcmp(args[0], "rmdir") == 0) { do_rmdir(args); return; }
-    if (strcmp(args[0], "rm") == 0) { do_rm(args); return; }
-    if (strcmp(args[0], "touch") == 0) { do_touch(args); return; }
     if (strcmp(args[0], "cat") == 0) { do_cat(args); return; }
-    if (strcmp(args[0], "cp") == 0) { do_cp(args); return; }
-    if (strcmp(args[0], "mv") == 0) { do_mv(args); return; }
     if (strcmp(args[0], "echo") == 0) { do_echo(args); return; }
+    if (strcmp(args[0], "sysmon") == 0) { do_sysmon(args); return; }
+    
+    // Commands with undo support
+    if (strcmp(args[0], "mkdir") == 0) { 
+        do_mkdir(args); 
+        if (args[1]) push_undo(undo_stack, cmd, UNDO_MKDIR, args[1], NULL);
+        return; 
+    }
+    if (strcmp(args[0], "rmdir") == 0) { 
+        do_rmdir(args); 
+        if (args[1]) push_undo(undo_stack, cmd, UNDO_RMDIR, args[1], NULL);
+        return; 
+    }
+    if (strcmp(args[0], "rm") == 0) { 
+        // TODO: Create backup before deleting
+        do_rm(args); 
+        if (args[1]) push_undo(undo_stack, cmd, UNDO_RM, args[1], NULL);
+        return; 
+    }
+    if (strcmp(args[0], "touch") == 0) { 
+        do_touch(args); 
+        if (args[1]) push_undo(undo_stack, cmd, UNDO_TOUCH, args[1], NULL);
+        return; 
+    }
+    if (strcmp(args[0], "cp") == 0) { 
+        do_cp(args); 
+        if (args[2]) push_undo(undo_stack, cmd, UNDO_CP, args[2], NULL);
+        return; 
+    }
+    if (strcmp(args[0], "mv") == 0) { 
+        do_mv(args); 
+        if (args[1] && args[2]) push_undo(undo_stack, cmd, UNDO_MV, args[2], NULL);
+        return; 
+    }
+    
+    // Custom commands
+    if (strcmp(args[0], "tree") == 0) { do_tree(args); return; }
+    if (strcmp(args[0], "search") == 0) { do_search(args); return; }
+    if (strcmp(args[0], "backup") == 0) { do_backup(args); return; }
+    if (strcmp(args[0], "compare") == 0) { do_compare(args); return; }
+    if (strcmp(args[0], "stats") == 0) { do_stats(args); return; }
+    if (strcmp(args[0], "bookmark") == 0) { do_bookmark(args); return; }
+    if (strcmp(args[0], "recent") == 0) { do_recent(args); return; }
+    if (strcmp(args[0], "bulk_rename") == 0) { do_bulk_rename(args); return; }
 
     if (strcmp(args[0], "cd") == 0) {
         if (args[1] == NULL) {
@@ -275,7 +318,7 @@ void execute_line(char *cmd, History *history, TrieNode *trie, BKTreeNode *bktre
             if (chdir(args[1]) != 0) {
                 perror("cd");
             } else {
-                push_undo(undo_stack, cmd);
+                push_undo(undo_stack, cmd, UNDO_UNKNOWN, NULL, NULL);
                 if (teaching_mode) explain_command("cd");
             }
         }
@@ -354,7 +397,7 @@ void execute_line(char *cmd, History *history, TrieNode *trie, BKTreeNode *bktre
             }
         }
     } else {
-        push_undo(undo_stack, cmd);
+        push_undo(undo_stack, cmd, UNDO_UNKNOWN, NULL, NULL);
         if (teaching_mode) {
             explain_command(args[0]);
         }
