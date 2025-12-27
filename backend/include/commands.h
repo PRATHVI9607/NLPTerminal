@@ -18,10 +18,10 @@ void do_search(char **args);
 void do_backup(char **args);
 void do_compare(char **args);
 void do_stats(char **args);
-void do_sysmon(char **args);
 void do_bookmark(char **args);
 void do_recent(char **args);
 void do_bulk_rename(char **args);
+void do_sysmon(char **args);
 
 #endif
 

@@ -182,17 +182,17 @@ void show_help(char **args) {
     printf("│ encrypt <f> <key>  - Encrypt file with XOR cipher                   │\n");
     printf("│ decrypt <f> <key>  - Decrypt file                                   │\n");
     printf("│ sizeof <pattern>   - Total size of matching files                   │\n");
-    printf("| age <days> [o|n]   - Find files older/newer than days               |\n");
-    printf("| freq <file> [n]    - Word frequency analysis                        |\n");
-    printf("| lines <file>       - Detailed line/word/char statistics             |\n");
-    printf("| quicknote          - Quick note taking (add/list/search/clear)      |\n");
-    printf("| calc <expr>        - Calculator (supports +,-,*,/,^)                |\n");
-    printf("+---------------------------------------------------------------------+\n\n");
+    printf("│ age <days> [o|n]   - Find files older/newer than days               │\n");
+    printf("│ freq <file> [n]    - Word frequency analysis                        │\n");
+    printf("│ lines <file>       - Detailed line/word/char statistics             │\n");
+    printf("│ quicknote          - Quick note taking (add/list/search/clear)      │\n");
+    printf("│ calc <expr>        - Calculator (supports +,-,*,/,^)                │\n");
+    printf("└─────────────────────────────────────────────────────────────────────┘\n\n");
     
-    printf("+- System Information --------------------------------------------+\n");
-    printf("| sysmon             - Full system resource monitor                   |\n");
-    printf("| sysmon -c          - Compact system info                            |\n");
-    printf("| sysmon -l          - Live updating monitor                          |\n");
+    printf("┌─ System Information ─────────────────────────────────────────────────┐\n");
+    printf("│ sysmon             - Full system resource monitor                   │\n");
+    printf("│ sysmon -c          - Compact system info                            │\n");
+    printf("│ sysmon -l          - Live updating monitor                          │\n");
     printf("│ ps                 - List running processes                         │\n");
     printf("│ kill <pid> [sig]   - Kill process                                   │\n");
     printf("│ df                 - Disk free space                                │\n");

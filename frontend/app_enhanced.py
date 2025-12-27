@@ -303,22 +303,22 @@ class NLPTerminalApp:
         }
         
         # Quick action buttons
-        tk.Button(toolbar, text="📁 Files", command=lambda: self.send_command_direct("ls"), **btn_style).pack(side=tk.LEFT, padx=2, pady=4)
-        tk.Button(toolbar, text="📊 SysMon", command=lambda: self.send_command_direct("sysmon"), **btn_style).pack(side=tk.LEFT, padx=2, pady=4)
-        tk.Button(toolbar, text="🧹 Clear", command=self.clear_screen, **btn_style).pack(side=tk.LEFT, padx=2, pady=4)
-        tk.Button(toolbar, text="📝 Notes", command=lambda: self.send_command_direct("quicknote list"), **btn_style).pack(side=tk.LEFT, padx=2, pady=4)
-        tk.Button(toolbar, text="🔍 Find Dup", command=lambda: self.send_command_direct("duplicate"), **btn_style).pack(side=tk.LEFT, padx=2, pady=4)
-        tk.Button(toolbar, text="❓ Help", command=lambda: self.send_command_direct("help"), **btn_style).pack(side=tk.LEFT, padx=2, pady=4)
+        tk.Button(toolbar, text="Files", command=lambda: self.send_command_direct("ls -la"), **btn_style).pack(side=tk.LEFT, padx=2, pady=4)
+        tk.Button(toolbar, text="Tree", command=lambda: self.send_command_direct("tree"), **btn_style).pack(side=tk.LEFT, padx=2, pady=4)
+        tk.Button(toolbar, text="SysMon", command=lambda: self.send_command_direct("sysmon"), **btn_style).pack(side=tk.LEFT, padx=2, pady=4)
+        tk.Button(toolbar, text="Clear", command=self.clear_screen, **btn_style).pack(side=tk.LEFT, padx=2, pady=4)
+        tk.Button(toolbar, text="Notes", command=lambda: self.send_command_direct("quicknote list"), **btn_style).pack(side=tk.LEFT, padx=2, pady=4)
+        tk.Button(toolbar, text="Help", command=lambda: self.send_command_direct("help"), **btn_style).pack(side=tk.LEFT, padx=2, pady=4)
         
         # Separator
         ttk.Separator(toolbar, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10, pady=6)
         
         # Zoom controls
-        tk.Button(toolbar, text="➕", command=self.zoom_in, width=3, **btn_style).pack(side=tk.LEFT, padx=2, pady=4)
-        tk.Button(toolbar, text="➖", command=self.zoom_out, width=3, **btn_style).pack(side=tk.LEFT, padx=2, pady=4)
+        tk.Button(toolbar, text="+", command=self.zoom_in, width=3, **btn_style).pack(side=tk.LEFT, padx=2, pady=4)
+        tk.Button(toolbar, text="-", command=self.zoom_out, width=3, **btn_style).pack(side=tk.LEFT, padx=2, pady=4)
         
         # Current directory display
-        self.cwd_label = tk.Label(toolbar, text="📂 ./", bg="#333333", fg="#8b949e", font=("Consolas", 9))
+        self.cwd_label = tk.Label(toolbar, text="./", bg="#333333", fg="#8b949e", font=("Consolas", 9))
         self.cwd_label.pack(side=tk.RIGHT, padx=10)
         
     def create_terminal(self):
@@ -450,25 +450,30 @@ class NLPTerminalApp:
     def show_welcome(self):
         """Show welcome message"""
         welcome = """
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                                                                              ║
-║                    🚀 NLP TERMINAL - Advanced Shell 🚀                       ║
-║                                                                              ║
-║  Features:                                                                   ║
-║    • Natural Language Commands - Just describe what you want!                ║
-║    • Intellisense Suggestions - Start typing for smart completions           ║
-║    • Command History - Up/Down arrows to navigate                            ║
-║    • Right Arrow - Auto-complete with first suggestion                       ║
-║    • Unique Commands - fileinfo, hexdump, duplicate, calc, quicknote...      ║
-║    • System Monitor - Real-time CPU, Memory, Disk, Network info              ║
-║                                                                              ║
-║  Quick Start:                                                                ║
-║    • Type 'help' for all commands                                            ║
-║    • Try: "show all files" or "create folder called test"                    ║
-║    • Press Tab for command completion                                        ║
-║    • Ctrl+L to clear, Ctrl+C to copy/interrupt                              ║
-║                                                                              ║
-╚══════════════════════════════════════════════════════════════════════════════╝
++------------------------------------------------------------------------------+
+|                                                                              |
+|                       NLP TERMINAL - Advanced Shell                          |
+|                         Natural Language Interface                           |
+|                                                                              |
++------------------------------------------------------------------------------+
+|                                                                              |
+|  Features:                                                                   |
+|    * Natural Language Commands - Just describe what you want!                |
+|    * Intellisense Suggestions - Start typing for smart completions           |
+|    * Command History - Use Up/Down arrows to navigate                        |
+|    * Auto-Complete - Right Arrow/Tab to accept suggestions                   |
+|    * System Monitor - Real-time CPU, Memory, Disk usage info                 |
+|    * Rich Commands - fileinfo, hexdump, duplicate, calc, tree...             |
+|                                                                              |
+|  Quick Start:                                                                |
+|    help           - View all available commands                              |
+|    tree           - Display directory tree                                   |
+|    sysmon         - System resource monitor                                  |
+|    "show files"   - Try natural language!                                    |
+|                                                                              |
+|  Shortcuts: Ctrl+L (clear) | Tab (complete) | Ctrl+C (copy/cancel)           |
+|                                                                              |
++------------------------------------------------------------------------------+
 
 """
         self.text_area.insert(tk.END, welcome, "header")
@@ -860,15 +865,18 @@ class NLPTerminalApp:
     def update_status(self, message, status_type="info"):
         """Update status bar"""
         colors = {
-            "success": "#007acc",
-            "error": "#f14c4c", 
-            "warning": "#cca700",
-            "info": "#007acc"
+            "success": "#238636",
+            "error": "#da3633", 
+            "warning": "#9e6a03",
+            "info": "#21262d"
         }
-        self.status_bar.config(bg=colors.get(status_type, "#007acc"))
-        self.status_label.config(text=message, bg=colors.get(status_type, "#007acc"))
-        self.position_label.config(bg=colors.get(status_type, "#007acc"))
-        self.zoom_label.config(bg=colors.get(status_type, "#007acc"))
+        bg_color = colors.get(status_type, "#21262d")
+        fg_color = "#e6edf3" if status_type in ["success", "error", "warning"] else "#7d8590"
+        
+        self.status_bar.config(bg=bg_color)
+        self.status_label.config(text=message, bg=bg_color, fg=fg_color)
+        self.position_label.config(bg=bg_color, fg=fg_color)
+        self.zoom_label.config(bg=bg_color, fg=fg_color)
         
     def new_terminal(self):
         """Open new terminal window"""
@@ -964,45 +972,80 @@ class NLPTerminalApp:
         entry.bind("<Return>", lambda e: calculate())
         
     def show_shortcuts(self):
-        """Show keyboard shortcuts"""
-        shortcuts = """
-╔══════════════════════════════════════════════════════════════╗
-║                    KEYBOARD SHORTCUTS                        ║
-╠══════════════════════════════════════════════════════════════╣
-║                                                              ║
-║  Navigation:                                                 ║
-║    Up/Down Arrow    Navigate command history                 ║
-║    Right Arrow      Accept suggestion / autocomplete         ║
-║    Tab              Cycle through suggestions                ║
-║    Ctrl+A           Move to beginning of line                ║
-║    Ctrl+E           Move to end of line                      ║
-║                                                              ║
-║  Editing:                                                    ║
-║    Ctrl+U           Clear entire line                        ║
-║    Ctrl+K           Delete from cursor to end                ║
-║    Ctrl+W           Delete word backwards                    ║
-║    Backspace        Delete character                         ║
-║                                                              ║
-║  Clipboard:                                                  ║
-║    Ctrl+C           Copy selection / Interrupt               ║
-║    Ctrl+Shift+C     Copy                                     ║
-║    Ctrl+Shift+V     Paste                                    ║
-║                                                              ║
-║  View:                                                       ║
-║    Ctrl+L           Clear screen                             ║
-║    Ctrl++           Zoom in                                  ║
-║    Ctrl+-           Zoom out                                 ║
-║    Ctrl+0           Reset zoom                               ║
-║    Ctrl+Scroll      Mouse wheel zoom                         ║
-║                                                              ║
-║  System:                                                     ║
-║    Ctrl+D           Exit                                     ║
-║    Ctrl+Shift+N     New terminal window                      ║
-║    Escape           Hide suggestions                         ║
-║                                                              ║
-╚══════════════════════════════════════════════════════════════╝
-"""
-        messagebox.showinfo("Keyboard Shortcuts", shortcuts)
+        """Show keyboard shortcuts in a custom dialog"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Keyboard Shortcuts")
+        dialog.geometry("550x550")
+        dialog.configure(bg="#1e1e1e")
+        dialog.transient(self.root)
+        dialog.resizable(False, False)
+        
+        # Center the dialog
+        dialog.update_idletasks()
+        x = (dialog.winfo_screenwidth() - 550) // 2
+        y = (dialog.winfo_screenheight() - 550) // 2
+        dialog.geometry(f"550x550+{x}+{y}")
+        
+        # Title
+        title_frame = tk.Frame(dialog, bg="#007acc", height=40)
+        title_frame.pack(fill=tk.X)
+        title_frame.pack_propagate(False)
+        tk.Label(title_frame, text="⌨️  KEYBOARD SHORTCUTS", bg="#007acc", fg="#ffffff",
+                font=("Segoe UI", 14, "bold")).pack(expand=True)
+        
+        # Content frame with scrollable text
+        content_frame = tk.Frame(dialog, bg="#1e1e1e")
+        content_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=15)
+        
+        shortcuts_data = [
+            ("📍 Navigation", [
+                ("Up/Down Arrow", "Navigate command history"),
+                ("Right Arrow", "Accept suggestion / autocomplete"),
+                ("Tab", "Cycle through suggestions"),
+                ("Ctrl+A", "Move to beginning of line"),
+                ("Ctrl+E", "Move to end of line"),
+            ]),
+            ("✏️ Editing", [
+                ("Ctrl+U", "Clear entire line"),
+                ("Ctrl+K", "Delete from cursor to end"),
+                ("Ctrl+W", "Delete word backwards"),
+                ("Backspace", "Delete character"),
+            ]),
+            ("📋 Clipboard", [
+                ("Ctrl+C", "Copy selection / Interrupt"),
+                ("Ctrl+Shift+C", "Copy"),
+                ("Ctrl+Shift+V", "Paste"),
+            ]),
+            ("🔍 View", [
+                ("Ctrl+L", "Clear screen"),
+                ("Ctrl++", "Zoom in"),
+                ("Ctrl+-", "Zoom out"),
+                ("Ctrl+0", "Reset zoom"),
+                ("Ctrl+Scroll", "Mouse wheel zoom"),
+            ]),
+            ("⚙️ System", [
+                ("Ctrl+D", "Exit"),
+                ("Ctrl+Shift+N", "New terminal window"),
+                ("Escape", "Hide suggestions"),
+            ]),
+        ]
+        
+        for section_title, items in shortcuts_data:
+            # Section header
+            tk.Label(content_frame, text=section_title, bg="#1e1e1e", fg="#569cd6",
+                    font=("Segoe UI", 11, "bold"), anchor="w").pack(fill=tk.X, pady=(10, 5))
+            
+            for key, desc in items:
+                row = tk.Frame(content_frame, bg="#1e1e1e")
+                row.pack(fill=tk.X, pady=1)
+                tk.Label(row, text=key, bg="#1e1e1e", fg="#ce9178", width=18,
+                        font=("Consolas", 10), anchor="w").pack(side=tk.LEFT)
+                tk.Label(row, text=desc, bg="#1e1e1e", fg="#d4d4d4",
+                        font=("Segoe UI", 10), anchor="w").pack(side=tk.LEFT, padx=10)
+        
+        # Close button
+        tk.Button(dialog, text="Close", command=dialog.destroy, bg="#0e639c", fg="#ffffff",
+                 font=("Segoe UI", 10), padx=20, pady=5, bd=0, cursor="hand2").pack(pady=15)
         
     def show_about(self):
         """Show about dialog"""

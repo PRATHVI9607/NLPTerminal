@@ -237,8 +237,8 @@ void suggestion_get_paths(const char *partial_path, int dirs_only, SuggestionLis
             
             if (dirs_only && !is_dir) continue;
             
-            // Build suggestion
-            char suggestion[MAX_SUGGESTION_LEN];
+            // Build suggestion - use larger buffer to avoid truncation
+            char suggestion[768];
             if (strcmp(dir_path, ".") == 0) {
                 snprintf(suggestion, sizeof(suggestion), "%s%s", 
                         entry->d_name, is_dir ? "/" : "");
@@ -248,6 +248,7 @@ void suggestion_get_paths(const char *partial_path, int dirs_only, SuggestionLis
             }
             
             strncpy(out->suggestions[out->count], suggestion, MAX_SUGGESTION_LEN - 1);
+            out->suggestions[out->count][MAX_SUGGESTION_LEN - 1] = '\0';
             out->count++;
         }
     }

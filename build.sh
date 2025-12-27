@@ -16,6 +16,7 @@ gcc -Wall -Wextra -Iinclude -D_GNU_SOURCE -c src/trie.c -o src/trie.o
 gcc -Wall -Wextra -Iinclude -D_GNU_SOURCE -c src/bktree.c -o src/bktree.o
 gcc -Wall -Wextra -Iinclude -D_GNU_SOURCE -c src/undo.c -o src/undo.o
 gcc -Wall -Wextra -Iinclude -D_GNU_SOURCE -c src/macros.c -o src/macros.o
+gcc -Wall -Wextra -Iinclude -D_GNU_SOURCE -c src/commands.c -o src/commands.o
 gcc -Wall -Wextra -Iinclude -D_GNU_SOURCE -c src/nlp_engine.c -o src/nlp_engine.o
 gcc -Wall -Wextra -Iinclude -D_GNU_SOURCE -c src/suggestion_engine.c -o src/suggestion_engine.o
 gcc -Wall -Wextra -Iinclude -D_GNU_SOURCE -c src/custom_commands.c -o src/custom_commands.o
@@ -24,7 +25,7 @@ gcc -Wall -Wextra -Iinclude -D_GNU_SOURCE -c src/main_enhanced.c -o src/main_enh
 
 # Link
 echo "[3/3] Linking..."
-gcc -o mysh src/main_enhanced.o src/utils.o src/history.o src/trie.o src/bktree.o src/undo.o src/macros.o src/nlp_engine.o src/suggestion_engine.o src/custom_commands.o src/sysmon_advanced.o -lm
+gcc -o mysh src/main_enhanced.o src/utils.o src/history.o src/trie.o src/bktree.o src/undo.o src/macros.o src/commands.o src/nlp_engine.o src/suggestion_engine.o src/custom_commands.o src/sysmon_advanced.o -lm
 
 if [ -f mysh ]; then
     echo "=== Build successful! ==="

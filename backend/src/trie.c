@@ -15,7 +15,8 @@ TrieNode *create_node() {
 
 void insert_trie(TrieNode *root, const char *key) {
     TrieNode *crawl = root;
-    for (int i = 0; i < strlen(key); i++) {
+    size_t len = strlen(key);
+    for (size_t i = 0; i < len; i++) {
         int index = tolower(key[i]) - 'a';
         if (index < 0 || index >= ALPHABET_SIZE) continue; // Only support a-z for now
         
@@ -29,7 +30,8 @@ void insert_trie(TrieNode *root, const char *key) {
 
 bool search_trie(TrieNode *root, const char *key) {
     TrieNode *crawl = root;
-    for (int i = 0; i < strlen(key); i++) {
+    size_t len = strlen(key);
+    for (size_t i = 0; i < len; i++) {
         int index = tolower(key[i]) - 'a';
         if (index < 0 || index >= ALPHABET_SIZE) return false;
         
@@ -60,7 +62,8 @@ void get_suggestions(TrieNode *root, const char *prefix, char **results, int *co
     TrieNode *crawl = root;
     *count = 0;
     
-    for (int i = 0; i < strlen(prefix); i++) {
+    size_t len = strlen(prefix);
+    for (size_t i = 0; i < len; i++) {
         int index = tolower(prefix[i]) - 'a';
         if (index < 0 || index >= ALPHABET_SIZE) return;
         

@@ -1,86 +1,231 @@
 # NLP Terminal
 
-A custom C-based shell with Natural Language Processing support and a Python/Tkinter frontend. Features intellisense-like suggestions, command history, natural language to command translation, and unique commands not found in standard UNIX.
+<p align="center">
+  <strong>A Custom C-based Shell with Natural Language Processing Support</strong>
+</p>
 
-**Platform:** Linux only (uses /proc filesystem and POSIX system calls)
+<p align="center">
+  <img src="https://img.shields.io/badge/Language-C-blue" alt="C">
+  <img src="https://img.shields.io/badge/Frontend-Python%2FTkinter-green" alt="Python">
+  <img src="https://img.shields.io/badge/Platform-Linux-orange" alt="Linux">
+  <img src="https://img.shields.io/badge/License-MIT-yellow" alt="License">
+</p>
+
+---
+
+## Overview
+
+NLP Terminal is an advanced command-line shell that combines traditional Unix-like commands with natural language processing capabilities. Type commands naturally like "show all files" or "create folder called projects" and watch them translate into actual shell commands.
+
+**Key Highlights:**
+- Natural Language to Command Translation
+- Intellisense-style Auto-completion
+- Unique Commands not found in standard Unix
+- Real-time System Resource Monitor
+- Command History with Undo Support
+- Modern GUI with Python/Tkinter
 
 ---
 
 ## Table of Contents
+
 - [Features](#features)
+- [Screenshots](#screenshots)
 - [Prerequisites](#prerequisites)
-- [Installation & Running](#installation--running)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
 - [Command Reference](#command-reference)
-  - [File Operations](#file-operations)
-  - [Text Processing](#text-processing)
-  - [Unique Commands](#unique-commands)
-  - [System Information](#system-information)
-  - [Shell Features](#shell-features)
 - [Natural Language Examples](#natural-language-examples)
-- [Keyboard Shortcuts](#keyboard-shortcuts)
+- [Data Structures](#data-structures)
+- [Project Structure](#project-structure)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
 
 ---
 
 ## Features
 
-- **NLP Translation**: Type natural language like "show all files" and it translates to `ls`
-- **Intellisense Suggestions**: Real-time command suggestions as you type
-- **Command History**: Arrow keys to navigate history, Tab for completion
-- **Unique Commands**: Commands not found in standard UNIX (`fileinfo`, `hexdump`, `duplicate`, etc.)
-- **System Monitor**: Live system resource monitoring
-- **Zoom Controls**: Ctrl+Plus/Minus to adjust font size in the UI
+### Core Features
+
+| Feature | Description |
+|---------|-------------|
+| **NLP Translation** | Type natural phrases like "show all files" → `ls` |
+| **Auto-completion** | Tab completion and real-time suggestions |
+| **Command History** | Navigate with Up/Down arrows |
+| **Undo Operations** | Reverse file operations with `undo` |
+| **System Monitor** | Live CPU, Memory, Disk monitoring |
+| **Macros** | Record and replay command sequences |
+
+### Unique Commands
+
+Commands not found in standard Unix:
+
+| Command | Description |
+|---------|-------------|
+| `fileinfo` | Detailed file information (size, hash, permissions) |
+| `hexdump` | View files in hexadecimal format |
+| `duplicate` | Find duplicate files by content |
+| `calc` | Built-in calculator |
+| `quicknote` | Quick note-taking system |
+| `sysmon` | System resource monitor |
+| `tree` | Visual directory tree |
+| `bulk_rename` | Rename multiple files at once |
+
+---
+
+## Screenshots
+
+### Terminal GUI
+```
++------------------------------------------------------------------------------+
+|                       NLP TERMINAL - Advanced Shell                          |
++------------------------------------------------------------------------------+
+|  Features:                                                                   |
+|    * Natural Language Commands - Just describe what you want!                |
+|    * Auto-Complete - Tab to accept suggestions                               |
+|    * System Monitor - Real-time CPU, Memory, Disk usage                      |
++------------------------------------------------------------------------------+
+
+shell> show all files
+[NLP] → ls (Listing files in current directory)
+file1.txt  file2.py  folder1/  folder2/
+
+shell> tree
+.
+|-- backend/
+|   |-- src/
+|   |   |-- main.c
+|   |   +-- utils.c
+|   +-- Makefile
+|-- frontend/
+|   +-- app.py
++-- README.md
+
+3 directories, 5 files
+```
+
+### System Monitor
+```
+====================================
+        SYSTEM RESOURCE MONITOR
+====================================
+
+[CPU] CPU Usage
+------------------------------------
+  Usage: [##########..........] 48.2%
+  Cores: 8
+
+[RAM] Memory Usage
+------------------------------------
+  Total:     15.6 GB
+  Used:       8.2 GB (52.5%)
+  [##########..........] 52.5%
+
+[HDD] Disk Usage (/)
+------------------------------------
+  Total:    500.0 GB
+  Used:     234.5 GB (46.9%)
+```
 
 ---
 
 ## Prerequisites
 
-- **Linux** (Ubuntu, Debian, or any distro with /proc filesystem)
-- **GCC** compiler
-- **Make** build tool
-- **Python 3.8+** with `tkinter` (for GUI)
+### System Requirements
 
-Install dependencies on Ubuntu/Debian:
+- **Operating System:** Linux (Ubuntu, Debian, Fedora, etc.)
+- **Compiler:** GCC 7.0 or higher
+- **Python:** 3.8 or higher (for GUI)
+- **Libraries:** Standard C library, math library
+
+### Installing Dependencies
+
+**Ubuntu/Debian:**
 ```bash
 sudo apt update
 sudo apt install build-essential python3 python3-tk
 ```
 
+**Fedora:**
+```bash
+sudo dnf install gcc make python3 python3-tkinter
+```
+
+**Arch Linux:**
+```bash
+sudo pacman -S gcc make python tk
+```
+
 ---
 
-## Installation & Running
+## Installation
 
-### Option 1: Using Makefile
+### Quick Install
+
 ```bash
-# Navigate to backend directory
-cd NLPTerminal/backend
+# Clone the repository
+git clone https://github.com/yourusername/NLPTerminal.git
+cd NLPTerminal
 
 # Build the project
+chmod +x build.sh
+./build.sh
+
+# Run the terminal
+python3 frontend/app_enhanced.py
+```
+
+### Manual Build
+
+```bash
+# Navigate to backend
+cd NLPTerminal/backend
+
+# Compile with make
+make clean
 make
 
-# Run the shell (terminal mode)
-./mysh
-
-# Or run with Python GUI
-cd ../frontend
-python3 app_enhanced.py
-```
-
-### Option 2: Using Build Script
-```bash
-# Make script executable
-chmod +x build.sh
-
-# Build and get instructions
-./build.sh
-```
-
-### Option 3: Manual Compilation
-```bash
-cd NLPTerminal/backend
+# Or compile manually
 gcc -Wall -Wextra -Iinclude -D_GNU_SOURCE -o mysh \
-    src/main_enhanced.c src/utils.c src/history.c src/trie.c \
-    src/bktree.c src/undo.c src/macros.c src/nlp_engine.c \
-    src/suggestion_engine.c src/custom_commands.c src/sysmon_advanced.c -lm
+    src/main_enhanced.c src/commands.c src/utils.c src/history.c \
+    src/trie.c src/bktree.c src/undo.c src/macros.c \
+    src/nlp_engine.c src/suggestion_engine.c \
+    src/custom_commands.c src/sysmon_advanced.c -lm
+```
+
+---
+
+## Quick Start
+
+### Starting the Terminal
+
+**GUI Mode (Recommended):**
+```bash
+python3 frontend/app_enhanced.py
+```
+
+**Command Line Mode:**
+```bash
+./backend/mysh
+```
+
+### First Commands
+
+```bash
+help              # View all commands
+pwd               # Current directory
+ls                # List files
+tree              # Directory tree
+sysmon            # System monitor
+```
+
+### Try Natural Language
+
+```bash
+"show all files"              # → ls
+"create folder called test"   # → mkdir test
+"where am i"                  # → pwd
+"go to home"                  # → cd ~
 ```
 
 ---
@@ -89,410 +234,92 @@ gcc -Wall -Wextra -Iinclude -D_GNU_SOURCE -o mysh \
 
 ### File Operations
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `ls [path]` | List directory contents | `ls` or `ls /home` |
-| `pwd` | Print current directory | `pwd` |
-| `cd <path>` | Change directory | `cd /home` or `cd ..` or `cd ~` |
-| `mkdir <name>` | Create directory | `mkdir projects` |
-| `rmdir <name>` | Remove empty directory | `rmdir old_folder` |
-| `touch <file>` | Create empty file | `touch notes.txt` |
-| `rm <file>` | Remove file | `rm temp.txt` |
-| `cat <file>` | Display file contents | `cat readme.txt` |
-| `cp <src> <dest>` | Copy file | `cp file.txt backup.txt` |
-| `mv <src> <dest>` | Move/rename file | `mv old.txt new.txt` |
-| `echo <text>` | Print text | `echo Hello World` |
-| `tree [path]` | Directory tree view | `tree` or `tree /home` |
+| Command | Syntax | Description |
+|---------|--------|-------------|
+| `ls` | `ls [path]` | List directory contents |
+| `touch` | `touch <file>` | Create empty file |
+| `rm` | `rm <file>` | Remove file |
+| `cp` | `cp <src> <dest>` | Copy file |
+| `mv` | `mv <src> <dest>` | Move/rename file |
+| `cat` | `cat <file>` | Display file contents |
 
-**Examples:**
-```bash
-# Create a new project structure
-mkdir myproject
-cd myproject
-touch main.c
-mkdir src include
-ls
+### Directory Operations
 
-# Copy and backup files
-cp main.c main_backup.c
-cat main.c
-```
+| Command | Syntax | Description |
+|---------|--------|-------------|
+| `pwd` | `pwd` | Print working directory |
+| `cd` | `cd <path>` | Change directory |
+| `mkdir` | `mkdir <name>` | Create directory |
+| `rmdir` | `rmdir <name>` | Remove empty directory |
+| `tree` | `tree [path] [depth]` | Display directory tree |
 
----
+### System Commands
 
-### Text Processing
-
-| Command | Description | Example |
-|---------|-------------|---------|
-| `head <file> [n]` | Show first n lines (default 10) | `head log.txt 5` |
-| `tail <file> [n]` | Show last n lines (default 10) | `tail log.txt 20` |
-| `wc <file>` | Count lines, words, chars | `wc document.txt` |
-| `grep <pattern> <file>` | Search pattern in file | `grep error log.txt` |
-| `sort <file>` | Sort file lines | `sort names.txt` |
-| `uniq <file>` | Remove adjacent duplicates | `uniq sorted.txt` |
-| `rev <file>` | Reverse each line | `rev text.txt` |
-
-**Examples:**
-```bash
-# View beginning and end of a log file
-head system.log 20
-tail system.log 50
-
-# Find all errors in a log
-grep error application.log
-grep WARNING server.log
-
-# Count lines in a file
-wc report.txt
-# Output: Lines: 150  Words: 2340  Chars: 15678
-
-# Sort and remove duplicates
-sort names.txt
-uniq sorted_names.txt
-```
-
----
+| Command | Syntax | Description |
+|---------|--------|-------------|
+| `sysmon` | `sysmon [-c\|-l]` | System resource monitor |
+| `ps` | `ps` | List processes |
+| `df` | `df` | Disk space usage |
+| `uptime` | `uptime` | System uptime |
 
 ### Unique Commands
 
-These commands are **not found in standard UNIX** systems:
-
-| Command | Description | Example |
-|---------|-------------|---------|
-| `fileinfo <file>` | Detailed file info (size, hash, permissions, inode) | `fileinfo document.pdf` |
-| `hexdump <file> [bytes]` | Display file in hexadecimal | `hexdump binary.dat 128` |
-| `duplicate [path]` | Find duplicate files by content hash | `duplicate .` or `duplicate /home` |
-| `encrypt <file> <key>` | Encrypt file with XOR cipher | `encrypt secret.txt mykey123` |
-| `decrypt <file> <key>` | Decrypt file (same as encrypt for XOR) | `decrypt secret.txt.enc mykey123` |
-| `sizeof <pattern>` | Total size of matching files | `sizeof *.txt` or `sizeof *` |
-| `age <days> [older\|newer]` | Find files by age | `age 7 older` or `age 1 newer` |
-| `freq <file> [top_n]` | Word frequency analysis | `freq book.txt 20` |
-| `lines <file>` | Detailed line/word/char statistics | `lines code.c` |
-| `quicknote [cmd]` | Quick note taking | `quicknote add "Remember to commit"` |
-| `calc <expression>` | Simple calculator | `calc 2 + 3` or `calc 100 / 4` |
-
-**Examples:**
-
-```bash
-# Get detailed info about a file
-fileinfo important_document.pdf
-# Output:
-# === FILE INFO: important_document.pdf ===
-# Size: 1048576 bytes (1.0 MB)
-# Type: File
-# Mode: 644
-# Modified: Fri Dec 27 10:30:00 2025
-# Inode: 123456
-# Hash: a1b2c3d4e5f6
-
-# View binary file in hex
-hexdump program.bin 256
-# Output:
-# 00000000  7f 45 4c 46 02 01 01 00  00 00 00 00 00 00 00 00  |.ELF............|
-# 00000010  03 00 3e 00 01 00 00 00  50 10 00 00 00 00 00 00  |..>.....P.......|
-
-# Find duplicate files in current directory
-duplicate .
-# Output:
-# Checking 45 files for duplicates...
-# DUPLICATE: photo1.jpg <-> backup/photo1.jpg
-# DUPLICATE: doc.pdf <-> old/doc.pdf
-
-# Encrypt a file
-encrypt passwords.txt secretkey
-# Output: Encrypted: passwords.txt -> passwords.txt.enc
-
-# Decrypt (XOR is symmetric)
-decrypt passwords.txt.enc secretkey
-
-# Calculate total size of all .c files
-sizeof *.c
-# Output: 15 files, total: 45.2 KB
-
-# Find files modified in last 24 hours
-age 1 newer
-# Output:
-# main.c
-# test.txt
-# notes.md
-
-# Find files older than 30 days
-age 30 older
-
-# Word frequency analysis
-freq novel.txt 10
-# Output:
-# Top 10 words:
-#  152: the
-#   98: and
-#   76: to
-#   65: a
-#   54: of
-
-# Quick notes
-quicknote add "Buy groceries"
-quicknote add "Call mom"
-quicknote list
-# Output:
-# 1. Buy groceries
-# 2. Call mom
-quicknote clear
-# Output: Notes cleared.
-
-# Calculator
-calc 15 + 27
-# Output: = 42
-
-calc 100 / 3
-# Output: = 33.3333
-
-calc 2 * 50
-# Output: = 100
-
-calc 45 - 12
-# Output: = 33
-```
-
----
-
-### System Information
-
-| Command | Description | Example |
-|---------|-------------|---------|
-| `sysmon` | Full system resource monitor | `sysmon` |
-| `sysmon -c` | Compact system info | `sysmon -c` |
-| `sysmon -l [sec]` | Live updating monitor | `sysmon -l 10` |
-| `ps` | List running processes | `ps` |
-| `kill <pid>` | Kill process by PID | `kill 1234` |
-| `df` | Disk free space | `df` |
-| `uptime` | System uptime | `uptime` |
-| `date` | Current date/time | `date` |
-| `whoami` | Current username | `whoami` |
-| `hostname` | System hostname | `hostname` |
-
-**Examples:**
-
-```bash
-# Full system monitor (CPU, Memory, Disk, Uptime)
-sysmon
-# Output:
-# ╔════════════════════════════════════════════════════════════════╗
-# ║                    SYSTEM RESOURCE MONITOR                     ║
-# ╚════════════════════════════════════════════════════════════════╝
-# ┌─ CPU Information ──────────────────────────────────────────────┐
-# │ Processors: 8 cores
-# │ CPU Usage: 23.5%
-# │ [████░░░░░░░░░░░░░░░░]
-# └────────────────────────────────────────────────────────────────┘
-# ┌─ Memory Information ───────────────────────────────────────────┐
-# │ Total: 16.00 GB  Used: 8.50 GB  Free: 7.50 GB
-# │ Usage: 53%  [██████████░░░░░░░░░░]
-# └────────────────────────────────────────────────────────────────┘
-
-# Compact view (one-line summary)
-sysmon -c
-
-# Live monitor for 30 seconds (updates every second)
-sysmon -l 30
-
-# Check disk usage
-df
-# Output:
-# Filesystem           Size       Used      Avail  Use%
-# /                   100.0 GB    45.2 GB   54.8 GB   45%
-# /home               500.0 GB   234.1 GB  265.9 GB   47%
-
-# List all processes
-ps
-# Output:
-# PID      COMMAND
-# 1        systemd
-# 234      sshd
-# 567      bash
-# 890      mysh
-
-# Kill a process
-kill 5678
-# Output: Killed 5678
-
-# Check uptime
-uptime
-# Output: up 5 days, 12:34
-
-# Get current date
-date
-# Output: Fri Dec 27 14:30:00 2025
-
-# Get username and hostname
-whoami
-# Output: john
-
-hostname
-# Output: ubuntu-desktop
-```
-
----
+| Command | Syntax | Description |
+|---------|--------|-------------|
+| `fileinfo` | `fileinfo <file>` | Detailed file information |
+| `hexdump` | `hexdump <file> [bytes]` | Hex view of file |
+| `duplicate` | `duplicate [dir]` | Find duplicate files |
+| `calc` | `calc <expr>` | Calculator |
+| `quicknote` | `quicknote <cmd>` | Note taking |
+| `bulk_rename` | `bulk_rename <old> <new>` | Batch rename |
 
 ### Shell Features
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `history` | Show command history | `history` |
-| `undo` | Undo last file operation | `undo` |
-| `macro define <name>` | Start recording macro | `macro define backup` |
-| `macro end` | Stop recording macro | `macro end` |
-| `macro run <name>` | Run recorded macro | `macro run backup` |
-| `macro list` | List available macros | `macro list` |
-| `teach on/off` | Enable/disable teaching mode | `teach on` |
-| `help [command]` | Show help | `help` or `help ls` |
-| `clear` | Clear screen | `clear` |
-| `exit` | Exit shell | `exit` |
-
-**Examples:**
-
-```bash
-# View command history
-history
-# Output:
-# 1. ls
-# 2. cd projects
-# 3. mkdir test
-# 4. touch file.txt
-
-# Undo last operation (works for mkdir, touch, cp, mv, rm)
-mkdir test_folder
-undo
-# Undoes the mkdir
-
-touch newfile.txt
-undo
-# Removes the file created
-
-# Create and run a macro
-macro define daily_backup
-cp important.txt backup/important.txt
-cp notes.txt backup/notes.txt
-echo "Backup complete!"
-macro end
-# Output: Macro recording ended.
-
-# Run the macro anytime
-macro run daily_backup
-# Executes all recorded commands
-
-# Teaching mode - explains each command
-teach on
-ls
-# Output: (shows ls results)
-# [Teaching Mode] ls - Lists files and directories...
-
-teach off
-
-# Get help
-help
-# Shows all available commands
-
-help fileinfo
-# Shows detailed help for fileinfo command
-
-# Clear screen
-clear
-```
+| Command | Syntax | Description |
+|---------|--------|-------------|
+| `history` | `history` | Command history |
+| `undo` | `undo` | Undo last operation |
+| `macro` | `macro <cmd> [name]` | Record/play macros |
+| `clear` | `clear` | Clear screen |
+| `help` | `help` | Show help |
+| `exit` | `exit` | Exit shell |
 
 ---
 
 ## Natural Language Examples
 
-Type natural language and the shell translates it to commands:
-
-| Natural Language Input | Translated Command |
-|----------------------|-------------------|
-| `show all files` | `ls` |
-| `what files are here` | `ls` |
-| `list directory` | `ls` |
-| `where am i` | `pwd` |
-| `current directory` | `pwd` |
-| `go to home` | `cd ~` |
-| `go back` | `cd ..` |
-| `go up` | `cd ..` |
-| `create folder test` | `mkdir test` |
-| `make directory projects` | `mkdir projects` |
-| `new folder data` | `mkdir data` |
-| `delete file temp.txt` | `rm temp.txt` |
-| `remove temp.txt` | `rm temp.txt` |
-| `show contents of readme` | `cat readme` |
-| `what's in config.txt` | `cat config.txt` |
-| `read file notes.txt` | `cat notes.txt` |
-| `copy file.txt to backup.txt` | `cp file.txt backup.txt` |
-| `rename old.txt to new.txt` | `mv old.txt new.txt` |
-| `move data.txt to archive` | `mv data.txt archive` |
-| `find duplicates` | `duplicate` |
-| `check for duplicate files` | `duplicate` |
-| `system monitor` | `sysmon` |
-| `check system` | `sysmon` |
-| `show resources` | `sysmon` |
-| `calculate 5 plus 3` | `calc 5 + 3` |
-| `word count of essay.txt` | `wc essay.txt` |
-| `count lines in code.c` | `lines code.c` |
-| `search for error in log` | `grep error log` |
-| `find error in logfile.txt` | `grep error logfile.txt` |
-| `clear screen` | `clear` |
-| `show history` | `history` |
-| `quit` | `exit` |
-
-**Try it:**
-```bash
-# Just type naturally!
-> show all files
-[NLP] Translated: ls
-(file listing appears)
-
-> what files are here
-[NLP] Translated: ls
-(file listing appears)
-
-> create folder myproject
-[NLP] Translated: mkdir myproject
-Directory 'myproject' created.
-
-> go to myproject
-[NLP] Translated: cd myproject
-
-> system monitor
-[NLP] Translated: sysmon
-(system info appears)
-
-> calculate 25 times 4
-[NLP] Translated: calc 25 * 4
-= 100
-```
+| You Say | Shell Executes |
+|---------|---------------|
+| "show all files" | `ls` |
+| "list files" | `ls` |
+| "where am i" | `pwd` |
+| "current directory" | `pwd` |
+| "create folder called projects" | `mkdir projects` |
+| "make a new file named test.txt" | `touch test.txt` |
+| "delete file old.txt" | `rm old.txt` |
+| "go to home" | `cd ~` |
+| "go back" | `cd ..` |
+| "show directory tree" | `tree` |
+| "show system monitor" | `sysmon` |
+| "copy file.txt to backup.txt" | `cp file.txt backup.txt` |
+| "rename old.txt to new.txt" | `mv old.txt new.txt` |
+| "show contents of readme" | `cat readme` |
 
 ---
 
-## Keyboard Shortcuts
+## Data Structures
 
-### In Python GUI (app_enhanced.py)
+The project implements several data structures for efficient operation:
 
-| Shortcut | Action |
-|----------|--------|
-| `Enter` | Execute command |
-| `Up Arrow` | Previous command from history |
-| `Down Arrow` | Next command from history |
-| `Tab` | Accept first suggestion |
-| `Right Arrow` | Accept first suggestion (at end of input) |
-| `Ctrl + +` | Zoom in (increase font size) |
-| `Ctrl + -` | Zoom out (decrease font size) |
-| `Ctrl + 0` | Reset zoom to default |
-| `Escape` | Close suggestion popup |
+| Data Structure | Purpose | Complexity |
+|---------------|---------|------------|
+| **Trie** | Command auto-completion | O(m) lookup |
+| **BK-Tree** | Fuzzy string matching / spell correction | O(k×m) search |
+| **Doubly Linked List** | Command history navigation | O(1) traversal |
+| **Stack** | Undo operations | O(1) push/pop |
+| **Dynamic Array** | Fast index-based history access | O(1) access |
 
-### Intellisense Features
-
-As you type, a suggestion popup appears showing:
-- Matching commands
-- Command descriptions
-- Usage examples
-
-Press `Tab` or `Right Arrow` to accept the first suggestion.
+For detailed analysis, see [DSAreport.md](DSAreport.md).
 
 ---
 
@@ -500,66 +327,98 @@ Press `Tab` or `Right Arrow` to accept the first suggestion.
 
 ```
 NLPTerminal/
-├── backend/
-│   ├── Makefile              # Build configuration
-│   ├── include/              # Header files
-│   │   ├── nlp_engine.h      # NLP function declarations
-│   │   ├── suggestion_engine.h
-│   │   ├── custom_commands.h
-│   │   ├── sysmon_advanced.h
-│   │   ├── history.h
-│   │   ├── trie.h
-│   │   ├── bktree.h
-│   │   └── ...
-│   └── src/                  # Source files
-│       ├── main_enhanced.c   # Main shell with NLP
-│       ├── nlp_engine.c      # NLP pattern matching (30+ patterns)
-│       ├── suggestion_engine.c # Command suggestions (60+ commands)
-│       ├── custom_commands.c # Unique commands implementation
-│       ├── sysmon_advanced.c # System monitor using /proc
-│       ├── history.c         # Command history
-│       ├── trie.c            # Trie for autocompletion
-│       ├── bktree.c          # BK-tree for fuzzy matching
-│       └── ...
-├── frontend/
-│   ├── app.py               # Original Python UI
-│   └── app_enhanced.py      # Enhanced UI with intellisense
-├── build.sh                 # Build script
-└── README.md               # This file
+|-- backend/
+|   |-- include/           # Header files
+|   |   |-- commands.h
+|   |   |-- trie.h
+|   |   |-- bktree.h
+|   |   |-- history.h
+|   |   |-- undo.h
+|   |   |-- macros.h
+|   |   |-- nlp_engine.h
+|   |   +-- ...
+|   |-- src/               # C source files
+|   |   |-- main_enhanced.c
+|   |   |-- commands.c
+|   |   |-- trie.c
+|   |   |-- bktree.c
+|   |   |-- nlp_engine.c
+|   |   +-- ...
+|   +-- Makefile
+|-- frontend/
+|   |-- app_enhanced.py    # Main GUI application
+|   |-- app.py             # Basic GUI
+|   |-- backend_comm.py    # Backend communication
+|   +-- nlp_translator.py  # NLP utilities
+|-- build.sh               # Build script
+|-- README.md              # This file
+|-- DSAreport.md           # Data structures report
++-- user_manual.md         # Complete user manual
 ```
 
 ---
 
-## Troubleshooting
+## Documentation
 
-### Build Errors
-```bash
-# If make fails, try cleaning first
-make clean
-make
+| Document | Description |
+|----------|-------------|
+| [README.md](README.md) | Project overview and quick start |
+| [user_manual.md](user_manual.md) | Complete command reference and usage guide |
+| [DSAreport.md](DSAreport.md) | Data structures and algorithms analysis |
 
-# Check GCC is installed
-gcc --version
-```
+---
 
-### Python GUI Issues
-```bash
-# Install tkinter if missing
-sudo apt install python3-tk
+## Keyboard Shortcuts
 
-# Check Python version
-python3 --version
-```
+### Navigation
+| Shortcut | Action |
+|----------|--------|
+| `Up/Down` | Navigate history |
+| `Tab` | Auto-complete |
+| `Right Arrow` | Accept suggestion |
 
-### Permission Denied
-```bash
-# Make executable
-chmod +x mysh
-chmod +x build.sh
-```
+### Control
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+L` | Clear screen |
+| `Ctrl+C` | Cancel/Copy |
+| `Ctrl+D` | Exit |
+
+### GUI Zoom
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl++` | Zoom in |
+| `Ctrl+-` | Zoom out |
+| `Ctrl+0` | Reset zoom |
+
+---
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit issues and pull requests.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ---
 
 ## License
 
-This project is for educational purposes.
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+---
+
+## Acknowledgments
+
+- Built with C and Python
+- GUI powered by Tkinter
+- Inspired by modern terminal emulators and IDEs
+
+---
+
+<p align="center">
+  <strong>NLP Terminal</strong> - Making the command line more natural
+</p>

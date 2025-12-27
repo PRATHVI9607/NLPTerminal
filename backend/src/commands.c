@@ -21,6 +21,7 @@ static int total_commands = 0;
 
 // Implementation of 'pwd' using getcwd system call
 void do_pwd(char **args) {
+    (void)args;  // Unused parameter
     char cwd[1024];
     if (getcwd(cwd, sizeof(cwd)) != NULL) {
         printf("%s\n", cwd);
@@ -199,44 +200,104 @@ void do_mv(char **args) {
 
 // ============ CUSTOM COMMANDS ============
 
-// Helper function for tree
-static void print_tree_recursive(const char *path, int depth, const char *prefix) {
+// Structure to hold directory entries for sorting
+typedef struct {
+    char name[256];
+    int is_dir;
+} TreeEntry;
+
+// Compare function for sorting entries (directories first, then alphabetically)
+static int compare_entries(const void *a, const void *b) {
+    const TreeEntry *ea = (const TreeEntry *)a;
+    const TreeEntry *eb = (const TreeEntry *)b;
+    
+    // Directories come first
+    if (ea->is_dir && !eb->is_dir) return -1;
+    if (!ea->is_dir && eb->is_dir) return 1;
+    
+    return strcasecmp(ea->name, eb->name);
+}
+
+// Helper function for tree - clean tree visualization
+static int print_tree_recursive(const char *path, const char *prefix, int *file_count, int *dir_count, int max_depth, int current_depth) {
+    if (current_depth > max_depth) return 0;
+    
     DIR *d = opendir(path);
-    if (!d) return;
+    if (!d) return 0;
     
     struct dirent *dir;
     struct stat file_stat;
     char full_path[1024];
     
-    while ((dir = readdir(d)) != NULL) {
+    // Collect and sort entries
+    TreeEntry entries[500];
+    int count = 0;
+    
+    while ((dir = readdir(d)) != NULL && count < 500) {
         if (strcmp(dir->d_name, ".") == 0 || strcmp(dir->d_name, "..") == 0)
             continue;
-            
+        if (dir->d_name[0] == '.') continue;  // Skip hidden files
+        
         snprintf(full_path, sizeof(full_path), "%s/%s", path, dir->d_name);
+        strncpy(entries[count].name, dir->d_name, 255);
+        entries[count].name[255] = '\0';
         
-        for (int i = 0; i < depth; i++) printf("  ");
-        printf("|-- %s", dir->d_name);
-        
-        if (stat(full_path, &file_stat) == 0 && S_ISDIR(file_stat.st_mode)) {
-            printf("/\n");
-            if (depth < 3) { // Limit depth to prevent too deep recursion
-                print_tree_recursive(full_path, depth + 1, prefix);
-            }
+        if (stat(full_path, &file_stat) == 0) {
+            entries[count].is_dir = S_ISDIR(file_stat.st_mode);
         } else {
-            printf("\n");
+            entries[count].is_dir = 0;
         }
+        count++;
     }
     closedir(d);
+    
+    // Sort entries
+    qsort(entries, count, sizeof(TreeEntry), compare_entries);
+    
+    // Print entries with tree structure
+    for (int i = 0; i < count; i++) {
+        int is_last = (i == count - 1);
+        
+        snprintf(full_path, sizeof(full_path), "%s/%s", path, entries[i].name);
+        
+        // Print the branch
+        printf("%s%s", prefix, is_last ? "+-- " : "|-- ");
+        
+        if (entries[i].is_dir) {
+            (*dir_count)++;
+            printf("%s/\n", entries[i].name);
+            
+            // Recurse with updated prefix
+            char new_prefix[512];
+            snprintf(new_prefix, sizeof(new_prefix), "%s%s", prefix, 
+                    is_last ? "    " : "|   ");
+            print_tree_recursive(full_path, new_prefix, file_count, dir_count, max_depth, current_depth + 1);
+        } else {
+            (*file_count)++;
+            printf("%s\n", entries[i].name);
+        }
+    }
+    
+    return count;
 }
 
 void do_tree(char **args) {
     char *path = ".";
+    int max_depth = 4;
+    
     if (args[1] != NULL) {
         path = args[1];
+        if (args[2] != NULL) {
+            max_depth = atoi(args[2]);
+            if (max_depth < 1) max_depth = 4;
+        }
     }
     
-    printf("%s\n", path);
-    print_tree_recursive(path, 0, "");
+    int file_count = 0, dir_count = 0;
+    
+    printf("\n%s\n", path);
+    print_tree_recursive(path, "", &file_count, &dir_count, max_depth, 0);
+    printf("\n%d directories, %d files\n\n", dir_count, file_count);
 }
 
 void do_search(char **args) {
@@ -383,6 +444,7 @@ void do_compare(char **args) {
 }
 
 void do_stats(char **args) {
+    (void)args;  // Unused parameter
     total_commands++;
     printf("=== Shell Statistics ===\n");
     printf("Total commands executed: %d\n", total_commands);
@@ -461,6 +523,7 @@ void do_bookmark(char **args) {
 }
 
 void do_recent(char **args) {
+    (void)args;  // Unused parameter
     DIR *d = opendir(".");
     if (!d) {
         perror("recent");

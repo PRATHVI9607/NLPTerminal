@@ -10,7 +10,7 @@ RM = rm -f
 RMDIR = rm -rf
 
 # Source files - Original
-SRC_ORIGINAL = src/utils.c src/history.c src/trie.c src/bktree.c src/undo.c src/macros.c
+SRC_ORIGINAL = src/utils.c src/history.c src/trie.c src/bktree.c src/undo.c src/macros.c src/commands.c
 
 # Source files - New enhanced modules  
 SRC_ENHANCED = src/nlp_engine.c src/suggestion_engine.c src/custom_commands.c src/sysmon_advanced.c

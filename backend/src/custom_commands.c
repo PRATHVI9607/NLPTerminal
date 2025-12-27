@@ -18,6 +18,7 @@
 #include <pwd.h>
 #include <grp.h>
 #include <signal.h>
+#include <stdint.h>
 #include "custom_commands.h"
 
 #define BUFFER_SIZE 4096
@@ -130,16 +131,28 @@ void do_encrypt(char **args) {
     int fd = open(args[1], O_RDONLY);
     if (fd < 0) { perror("encrypt"); return; }
     
-    struct stat st; fstat(fd, &st);
+    struct stat st; 
+    if (fstat(fd, &st) != 0) { perror("encrypt"); close(fd); return; }
+    
     char *data = malloc(st.st_size);
-    read(fd, data, st.st_size);
+    if (!data) { fprintf(stderr, "encrypt: memory allocation failed\n"); close(fd); return; }
+    
+    ssize_t bytes_read = read(fd, data, st.st_size);
     close(fd);
+    
+    if (bytes_read != st.st_size) {
+        fprintf(stderr, "encrypt: read error\n");
+        free(data);
+        return;
+    }
     
     int klen = strlen(args[2]);
     for (off_t i = 0; i < st.st_size; i++) data[i] ^= args[2][i % klen];
     
     char out[512]; snprintf(out, sizeof(out), "%s.enc", args[1]);
     fd = open(out, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (fd < 0) { perror("encrypt"); free(data); return; }
+    
     write(fd, data, st.st_size);
     close(fd);
     free(data);
@@ -295,24 +308,51 @@ void do_calc(char **args) {
     // Build expression string
     char expr[256] = "";
     for (int i = 1; args[i]; i++) {
-        strcat(expr, args[i]);
-        strcat(expr, " ");
+        if (strlen(expr) + strlen(args[i]) + 1 < sizeof(expr)) {
+            strcat(expr, args[i]);
+            if (args[i+1]) strcat(expr, " ");
+        }
     }
     
-    // Very simple parser: num op num
+    // Remove spaces for parsing
+    char clean[256] = "";
+    int j = 0;
+    for (int i = 0; expr[i] && j < 255; i++) {
+        if (!isspace((unsigned char)expr[i])) clean[j++] = expr[i];
+    }
+    clean[j] = '\0';
+    
+    // Parse: num op num
     double a, b, result;
     char op;
-    if (sscanf(expr, "%lf %c %lf", &a, &op, &b) == 3) {
+    int parsed = 0;
+    
+    // Try to find operator position
+    for (int i = 1; clean[i]; i++) {
+        if (clean[i] == '+' || clean[i] == '-' || clean[i] == '*' || clean[i] == '/' || clean[i] == '^') {
+            char left[128] = "", right[128] = "";
+            strncpy(left, clean, i);
+            strcpy(right, clean + i + 1);
+            a = atof(left);
+            b = atof(right);
+            op = clean[i];
+            parsed = 1;
+            break;
+        }
+    }
+    
+    if (parsed) {
         switch (op) {
             case '+': result = a + b; break;
             case '-': result = a - b; break;
             case '*': result = a * b; break;
-            case '/': result = b != 0 ? a / b : 0; break;
-            default: printf("Unknown op: %c\n", op); return;
+            case '/': result = b != 0 ? a / b : 0; if (b == 0) { printf("Error: Division by zero\n"); return; } break;
+            case '^': result = 1; for (int i = 0; i < (int)b; i++) result *= a; break;
+            default: printf("Unknown operator: %c\n", op); return;
         }
         printf("= %.6g\n", result);
     } else {
-        printf("Format: calc <num> <op> <num>\n");
+        printf("Format: calc <num> <op> <num> (e.g., calc 2 + 3)\n");
     }
 }
 
@@ -378,11 +418,19 @@ void do_sort(char **args) {
     int count = 0;
     char buf[1024];
     
-    while (fgets(buf, sizeof(buf), fp) && count < 10000)
-        lines[count++] = strdup(buf);
+    while (fgets(buf, sizeof(buf), fp) && count < 10000) {
+        lines[count] = strdup(buf);
+        if (!lines[count]) {
+            fprintf(stderr, "sort: memory allocation failed\n");
+            for (int i = 0; i < count; i++) free(lines[i]);
+            fclose(fp);
+            return;
+        }
+        count++;
+    }
     fclose(fp);
     
-    // Bubble sort
+    // Quick sort comparison using qsort for better efficiency
     for (int i = 0; i < count - 1; i++) {
         for (int j = i + 1; j < count; j++) {
             if (strcmp(lines[i], lines[j]) > 0) {

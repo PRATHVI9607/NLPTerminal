@@ -232,17 +232,18 @@ class TerminalApp:
     def show_welcome(self):
         welcome = """
 ╔══════════════════════════════════════════════════════════════════════╗
-║           Welcome to NLP Terminal - Advanced Linux Shell             ║
-║                                                                      ║
-║  Type 'help' for available commands                                  ║
-║  Type 'sysmon' for system resource monitor                          ║
-║                                                                      ║
-║  Shortcuts: Ctrl+L (clear), Ctrl+C (copy), Up/Down (history)       ║
-╚══════════════════════════════════════════════════════════════════════╝
+║           Welcome to NLP Terminal - Advanced Linux Shell                 ║
+║                                                                          ║
+║  Type 'help' for available commands                                      ║
+║  Type 'sysmon' for system resource monitor                               ║
+║                                                                          ║
+║  Shortcuts: Ctrl+L (clear), Ctrl+C (copy), Up/Down (history)             ║
+╚══════════════════════════════════════════════════════════════════════════╝
 
 """
         self.text_area.insert(tk.END, welcome, "header")
         self.text_area.see(tk.END)
+        self.write_prompt()
 
     
     def check_backend_output(self):
@@ -549,7 +550,10 @@ Advanced Linux-like Shell with:
 
 Developed with ❤️
 """
-        messagebox.showinfo("About NLP Terminal", about)if __name__ == "__main__":
+        messagebox.showinfo("About NLP Terminal", about)
+
+
+if __name__ == "__main__":
     root = tk.Tk()
     app = TerminalApp(root)
     root.mainloop()

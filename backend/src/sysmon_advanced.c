@@ -216,63 +216,91 @@ void sysmon_display_compact(void) {
     format_bytes(mem.used_bytes, used, sizeof(used));
     format_bytes(mem.total_bytes, total, sizeof(total));
     
-    printf("\n  CPU: ");
-    print_bar(cpu.usage_percent, 30, "\033[33m");
-    printf("  (%d cores)\n", cpu.num_cores);
+    printf("\n\033[1;97;44m SYSTEM STATUS \033[0m\n\n");
+    printf("  \033[1;33m[CPU]\033[0m ");
+    print_bar(cpu.usage_percent, 30, cpu.usage_percent > 80 ? "\033[1;91m" : cpu.usage_percent > 50 ? "\033[1;93m" : "\033[1;92m");
+    printf("  \033[90m(%d cores)\033[0m\n", cpu.num_cores);
     
-    printf("  MEM: ");
-    print_bar(mem.usage_percent, 30, "\033[36m");
-    printf("  (%s / %s)\n\n", used, total);
+    printf("  \033[1;36m[RAM]\033[0m ");
+    print_bar(mem.usage_percent, 30, mem.usage_percent > 80 ? "\033[1;91m" : mem.usage_percent > 50 ? "\033[1;93m" : "\033[1;96m");
+    printf("  \033[90m(%s / %s)\033[0m\n\n", used, total);
 }
 
 // Display full
 void sysmon_display_full(void) {
-    printf("\n\033[1;36m========== SYSTEM MONITOR ==========\033[0m\n\n");
+    // Header with gradient-like effect
+    printf("\n");
+    printf("\033[1;97;44m+--------------------------------------------------------------+\033[0m\n");
+    printf("\033[1;97;44m|            [*] SYSTEM RESOURCE MONITOR [*]                   |\033[0m\n");
+    printf("\033[1;97;44m+--------------------------------------------------------------+\033[0m\n\n");
     
     UptimeInfo uptime = sysmon_get_uptime();
-    printf("Uptime: %d days, %02d:%02d:%02d\n\n", uptime.days, uptime.hours, uptime.minutes, uptime.seconds);
+    printf("\033[1;37m[i] Uptime:\033[0m \033[96m%d days, %02d:%02d:%02d\033[0m\n\n", 
+           uptime.days, uptime.hours, uptime.minutes, uptime.seconds);
     
+    // CPU Section
     CPUInfo cpu = sysmon_get_cpu_info();
-    printf("\033[1;33m-- CPU --\033[0m\n");
-    printf("Model: %s\n", cpu.model_name[0] ? cpu.model_name : "Unknown");
-    printf("Cores: %d\n", cpu.num_cores);
-    printf("Usage: "); print_bar(cpu.usage_percent, 40, "\033[33m"); printf("\n\n");
+    printf("\033[1;93m+--------------------------------------------------------------+\033[0m\n");
+    printf("\033[1;93m|\033[0m  \033[1;33m[CPU] PROCESSOR INFORMATION\033[0m                                \033[1;93m|\033[0m\n");
+    printf("\033[1;93m+--------------------------------------------------------------+\033[0m\n");
+    printf("\033[1;93m|\033[0m  Model: \033[97m%-50.50s\033[0m  \033[1;93m|\033[0m\n", 
+           cpu.model_name[0] ? cpu.model_name : "Unknown");
+    printf("\033[1;93m|\033[0m  Cores: \033[1;33m%-3d\033[0m                                                  \033[1;93m|\033[0m\n", cpu.num_cores);
+    printf("\033[1;93m|\033[0m  Usage: "); 
+    print_bar(cpu.usage_percent, 40, cpu.usage_percent > 80 ? "\033[1;91m" : cpu.usage_percent > 50 ? "\033[1;93m" : "\033[1;92m"); 
+    printf("       \033[1;93m|\033[0m\n");
+    printf("\033[1;93m+--------------------------------------------------------------+\033[0m\n\n");
     
+    // Memory Section
     MemoryInfo mem = sysmon_get_memory_info();
     char used[32], free_s[32], total[32];
     format_bytes(mem.used_bytes, used, sizeof(used));
     format_bytes(mem.free_bytes, free_s, sizeof(free_s));
     format_bytes(mem.total_bytes, total, sizeof(total));
     
-    printf("\033[1;36m-- MEMORY --\033[0m\n");
-    printf("Total: %s  Used: %s  Free: %s\n", total, used, free_s);
-    printf("Usage: "); print_bar(mem.usage_percent, 40, "\033[36m"); printf("\n\n");
+    printf("\033[1;96m+--------------------------------------------------------------+\033[0m\n");
+    printf("\033[1;96m|\033[0m  \033[1;36m[RAM] MEMORY\033[0m                                               \033[1;96m|\033[0m\n");
+    printf("\033[1;96m+--------------------------------------------------------------+\033[0m\n");
+    printf("\033[1;96m|\033[0m  Total: \033[97m%-10s\033[0m  Used: \033[93m%-10s\033[0m  Free: \033[92m%-10s\033[0m  \033[1;96m|\033[0m\n", total, used, free_s);
+    printf("\033[1;96m|\033[0m  Usage: "); 
+    print_bar(mem.usage_percent, 40, mem.usage_percent > 80 ? "\033[1;91m" : mem.usage_percent > 50 ? "\033[1;93m" : "\033[1;96m"); 
+    printf("       \033[1;96m|\033[0m\n");
+    printf("\033[1;96m+--------------------------------------------------------------+\033[0m\n\n");
     
+    // Disk Section
     DiskInfo disks[10];
     int disk_count = sysmon_get_disk_info(disks, 10);
-    printf("\033[1;32m-- DISKS --\033[0m\n");
-    for (int i = 0; i < disk_count; i++) {
+    printf("\033[1;92m+--------------------------------------------------------------+\033[0m\n");
+    printf("\033[1;92m|\033[0m  \033[1;32m[HDD] DISK STORAGE\033[0m                                         \033[1;92m|\033[0m\n");
+    printf("\033[1;92m+--------------------------------------------------------------+\033[0m\n");
+    for (int i = 0; i < disk_count && i < 4; i++) {
         char d_used[32], d_total[32];
         format_bytes(disks[i].used_bytes, d_used, sizeof(d_used));
         format_bytes(disks[i].total_bytes, d_total, sizeof(d_total));
-        printf("%-15s ", disks[i].mount_point);
-        print_bar(disks[i].usage_percent, 25, "\033[32m");
-        printf(" %s / %s\n", d_used, d_total);
+        printf("\033[1;92m|\033[0m  \033[97m%-12.12s\033[0m ", disks[i].mount_point);
+        print_bar(disks[i].usage_percent, 20, disks[i].usage_percent > 90 ? "\033[1;91m" : disks[i].usage_percent > 70 ? "\033[1;93m" : "\033[1;92m");
+        printf(" \033[90m%s/%s\033[0m  \033[1;92m|\033[0m\n", d_used, d_total);
     }
+    printf("\033[1;92m+--------------------------------------------------------------+\033[0m\n\n");
     
-    printf("\n\033[1;35m-- TOP PROCESSES --\033[0m\n");
+    // Processes Section
+    printf("\033[1;95m+--------------------------------------------------------------+\033[0m\n");
+    printf("\033[1;95m|\033[0m  \033[1;35m[PS] TOP PROCESSES\033[0m                                          \033[1;95m|\033[0m\n");
+    printf("\033[1;95m+--------------------------------------------------------------+\033[0m\n");
+    printf("\033[1;95m|\033[0m  \033[1;37m%-8s %-30s %s\033[0m               \033[1;95m|\033[0m\n", "PID", "NAME", "MEMORY");
+    printf("\033[1;95m|\033[0m  \033[90m-------- ------------------------------ ----------\033[0m   \033[1;95m|\033[0m\n");
     ProcessInfo procs[50];
     int pc = sysmon_get_process_info(procs, 50);
-    printf("%-8s %-25s %s\n", "PID", "NAME", "MEMORY");
     int shown = 0;
-    for (int i = 0; i < pc && shown < 8; i++) {
+    for (int i = 0; i < pc && shown < 6; i++) {
         if (procs[i].memory_bytes > 1024*1024) {
             char m[32]; format_bytes(procs[i].memory_bytes, m, sizeof(m));
-            printf("%-8d %-25.25s %s\n", procs[i].pid, procs[i].name, m);
+            printf("\033[1;95m|\033[0m  \033[93m%-8d\033[0m \033[97m%-30.30s\033[0m \033[96m%-10s\033[0m   \033[1;95m|\033[0m\n", 
+                   procs[i].pid, procs[i].name, m);
             shown++;
         }
     }
-    printf("\n");
+    printf("\033[1;95m+--------------------------------------------------------------+\033[0m\n\n");
 }
 
 // Live display
