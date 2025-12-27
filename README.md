@@ -8,7 +8,6 @@
   <img src="https://img.shields.io/badge/Language-C-blue" alt="C">
   <img src="https://img.shields.io/badge/Frontend-Python%2FTkinter-green" alt="Python">
   <img src="https://img.shields.io/badge/Platform-Linux-orange" alt="Linux">
-  <img src="https://img.shields.io/badge/License-MIT-yellow" alt="License">
 </p>
 
 ---
@@ -402,12 +401,6 @@ Contributions are welcome! Please feel free to submit issues and pull requests.
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
-
----
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
 
 ---
 
