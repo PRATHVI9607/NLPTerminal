@@ -8,14 +8,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <time.h>
-
-#ifdef _WIN32
-    #include <windows.h>
-    #include <psapi.h>
-    #include <tlhelp32.h>
-#else
-    #include <sys/statvfs.h>
-#endif
+#include <sys/statvfs.h>
 
 #include "commands.h"
 
@@ -535,211 +528,64 @@ void do_bulk_rename(char **args) {
     printf("Renamed %d files.\n", renamed);
 }
 
-// System Resource Monitor - displays CPU, Memory, Disk, Process info
+// System Resource Monitor - Linux only
+// For full system monitor, use sysmon_advanced.c
 void do_sysmon(char **args) {
+    (void)args;
     printf("╔════════════════════════════════════════════════════════════════╗\n");
     printf("║                    SYSTEM RESOURCE MONITOR                     ║\n");
     printf("╚════════════════════════════════════════════════════════════════╝\n\n");
 
-#ifdef _WIN32
-    // Windows implementation
-    #include <windows.h>
-    #include <psapi.h>
-    
-    // CPU Usage
-    FILETIME idleTime, kernelTime, userTime;
-    if (GetSystemTimes(&idleTime, &kernelTime, &userTime)) {
-        printf("┌─ CPU Information ───────────────────────────────────────────┐\n");
-        
-        SYSTEM_INFO sysInfo;
-        GetSystemInfo(&sysInfo);
-        printf("│ Processors: %lu cores\n", sysInfo.dwNumberOfProcessors);
-        
-        // Calculate CPU usage (simplified)
-        static ULONGLONG prevIdle = 0, prevKernel = 0, prevUser = 0;
-        ULONGLONG idle = ((ULONGLONG)idleTime.dwHighDateTime << 32) | idleTime.dwLowDateTime;
-        ULONGLONG kernel = ((ULONGLONG)kernelTime.dwHighDateTime << 32) | kernelTime.dwLowDateTime;
-        ULONGLONG user = ((ULONGLONG)userTime.dwHighDateTime << 32) | userTime.dwLowDateTime;
-        
-        if (prevIdle != 0) {
-            ULONGLONG idleDelta = idle - prevIdle;
-            ULONGLONG kernelDelta = kernel - prevKernel;
-            ULONGLONG userDelta = user - prevUser;
-            ULONGLONG totalDelta = kernelDelta + userDelta;
-            
-            if (totalDelta > 0) {
-                double cpuUsage = (1.0 - ((double)idleDelta / totalDelta)) * 100.0;
-                printf("│ CPU Usage: %.1f%%\n", cpuUsage);
-                
-                // Visual bar
-                int bars = (int)(cpuUsage / 5);
-                printf("│ [");
-                for (int i = 0; i < 20; i++) {
-                    if (i < bars) printf("█");
-                    else printf("░");
-                }
-                printf("]\n");
-            }
-        }
-        
-        prevIdle = idle;
-        prevKernel = kernel;
-        prevUser = user;
-        printf("└─────────────────────────────────────────────────────────────┘\n\n");
-    }
-    
-    // Memory Information
-    MEMORYSTATUSEX memInfo;
-    memInfo.dwLength = sizeof(MEMORYSTATUSEX);
-    if (GlobalMemoryStatusEx(&memInfo)) {
-        printf("┌─ Memory Information ────────────────────────────────────────┐\n");
-        
-        DWORDLONG totalPhysMem = memInfo.ullTotalPhys;
-        DWORDLONG availPhysMem = memInfo.ullAvailPhys;
-        DWORDLONG usedPhysMem = totalPhysMem - availPhysMem;
-        
-        printf("│ Total RAM: %.2f GB\n", totalPhysMem / (1024.0 * 1024.0 * 1024.0));
-        printf("│ Used RAM:  %.2f GB\n", usedPhysMem / (1024.0 * 1024.0 * 1024.0));
-        printf("│ Free RAM:  %.2f GB\n", availPhysMem / (1024.0 * 1024.0 * 1024.0));
-        printf("│ Usage: %lu%%\n", memInfo.dwMemoryLoad);
-        
-        // Visual bar
-        int bars = memInfo.dwMemoryLoad / 5;
-        printf("│ [");
-        for (int i = 0; i < 20; i++) {
-            if (i < bars) printf("█");
-            else printf("░");
-        }
-        printf("]\n");
-        printf("└─────────────────────────────────────────────────────────────┘\n\n");
-    }
-    
-    // Disk Information
-    printf("┌─ Disk Information ──────────────────────────────────────────┐\n");
-    DWORD drives = GetLogicalDrives();
-    for (int i = 0; i < 26; i++) {
-        if (drives & (1 << i)) {
-            char driveLetter[4];
-            sprintf(driveLetter, "%c:\\", 'A' + i);
-            
-            ULARGE_INTEGER freeBytesAvailable, totalBytes, freeBytes;
-            if (GetDiskFreeSpaceEx(driveLetter, &freeBytesAvailable, &totalBytes, &freeBytes)) {
-                double totalGB = totalBytes.QuadPart / (1024.0 * 1024.0 * 1024.0);
-                double freeGB = freeBytes.QuadPart / (1024.0 * 1024.0 * 1024.0);
-                double usedGB = totalGB - freeGB;
-                int usage = (int)((usedGB / totalGB) * 100);
-                
-                printf("│ Drive %s: %.1f GB / %.1f GB (%.1f%% used)\n", 
-                       driveLetter, usedGB, totalGB, (double)usage);
-            }
-        }
-    }
-    printf("└─────────────────────────────────────────────────────────────┘\n\n");
-    
-    // Process Information
-    printf("┌─ Process Information ───────────────────────────────────────┐\n");
-    
-    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    if (hSnapshot != INVALID_HANDLE_VALUE) {
-        PROCESSENTRY32 pe32;
-        pe32.dwSize = sizeof(PROCESSENTRY32);
-        
-        int processCount = 0;
-        if (Process32First(hSnapshot, &pe32)) {
-            do {
-                processCount++;
-            } while (Process32Next(hSnapshot, &pe32));
-        }
-        CloseHandle(hSnapshot);
-        
-        printf("│ Total Processes: %d\n", processCount);
-    }
-    
-    // Current Process Info
-    PROCESS_MEMORY_COUNTERS pmc;
-    if (GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc))) {
-        printf("│ Shell Memory: %.2f MB\n", pmc.WorkingSetSize / (1024.0 * 1024.0));
-    }
-    printf("└─────────────────────────────────────────────────────────────┘\n\n");
-
-#else
-    // Linux/Unix implementation
+    // CPU Information
     printf("┌─ CPU Information ───────────────────────────────────────────┐\n");
-    
-    // Read /proc/cpuinfo for CPU cores
     FILE *cpuinfo = fopen("/proc/cpuinfo", "r");
     int cores = 0;
     if (cpuinfo) {
         char line[256];
         while (fgets(line, sizeof(line), cpuinfo)) {
-            if (strncmp(line, "processor", 9) == 0) {
-                cores++;
-            }
+            if (strncmp(line, "processor", 9) == 0) cores++;
         }
         fclose(cpuinfo);
         printf("│ Processors: %d cores\n", cores);
     }
     
-    // Read /proc/stat for CPU usage
     FILE *stat = fopen("/proc/stat", "r");
     if (stat) {
         unsigned long long user, nice, system, idle, iowait, irq, softirq;
         char cpu[10];
         if (fscanf(stat, "%s %llu %llu %llu %llu %llu %llu %llu",
                    cpu, &user, &nice, &system, &idle, &iowait, &irq, &softirq) == 8) {
-            
             unsigned long long total = user + nice + system + idle + iowait + irq + softirq;
             unsigned long long active = total - idle;
             double cpuUsage = (double)active / total * 100.0;
-            
             printf("│ CPU Usage: %.1f%%\n", cpuUsage);
-            
-            // Visual bar
             int bars = (int)(cpuUsage / 5);
             printf("│ [");
-            for (int i = 0; i < 20; i++) {
-                if (i < bars) printf("█");
-                else printf("░");
-            }
+            for (int i = 0; i < 20; i++) printf(i < bars ? "█" : "░");
             printf("]\n");
         }
         fclose(stat);
     }
     printf("└─────────────────────────────────────────────────────────────┘\n\n");
     
-    // Memory Information from /proc/meminfo
+    // Memory Information
     printf("┌─ Memory Information ────────────────────────────────────────┐\n");
     FILE *meminfo = fopen("/proc/meminfo", "r");
     if (meminfo) {
-        unsigned long memTotal = 0, memFree = 0, memAvailable = 0, buffers = 0, cached = 0;
+        unsigned long memTotal = 0, memAvailable = 0;
         char line[256];
-        
         while (fgets(line, sizeof(line), meminfo)) {
-            if (sscanf(line, "MemTotal: %lu kB", &memTotal) == 1) continue;
-            if (sscanf(line, "MemFree: %lu kB", &memFree) == 1) continue;
-            if (sscanf(line, "MemAvailable: %lu kB", &memAvailable) == 1) continue;
-            if (sscanf(line, "Buffers: %lu kB", &buffers) == 1) continue;
-            if (sscanf(line, "Cached: %lu kB", &cached) == 1) continue;
+            sscanf(line, "MemTotal: %lu kB", &memTotal);
+            sscanf(line, "MemAvailable: %lu kB", &memAvailable);
         }
         fclose(meminfo);
-        
         double totalGB = memTotal / (1024.0 * 1024.0);
-        double availableGB = memAvailable / (1024.0 * 1024.0);
-        double usedGB = totalGB - availableGB;
+        double availGB = memAvailable / (1024.0 * 1024.0);
+        double usedGB = totalGB - availGB;
         int usage = (int)((usedGB / totalGB) * 100);
-        
-        printf("│ Total RAM: %.2f GB\n", totalGB);
-        printf("│ Used RAM:  %.2f GB\n", usedGB);
-        printf("│ Free RAM:  %.2f GB\n", availableGB);
-        printf("│ Usage: %d%%\n", usage);
-        
-        // Visual bar
-        int bars = usage / 5;
-        printf("│ [");
-        for (int i = 0; i < 20; i++) {
-            if (i < bars) printf("█");
-            else printf("░");
-        }
+        printf("│ Total: %.2f GB  Used: %.2f GB  Free: %.2f GB\n", totalGB, usedGB, availGB);
+        printf("│ Usage: %d%%  [", usage);
+        for (int i = 0; i < 20; i++) printf(i < usage/5 ? "█" : "░");
         printf("]\n");
     }
     printf("└─────────────────────────────────────────────────────────────┘\n\n");
@@ -750,25 +596,15 @@ void do_sysmon(char **args) {
     if (mtab) {
         char line[512], device[256], mountpoint[256], fstype[64];
         struct statvfs vfs;
-        
         while (fgets(line, sizeof(line), mtab)) {
             if (sscanf(line, "%s %s %s", device, mountpoint, fstype) == 3) {
-                // Only show major filesystems
-                if (device[0] == '/' && strncmp(device, "/dev/", 5) == 0) {
-                    if (statvfs(mountpoint, &vfs) == 0) {
-                        unsigned long long totalBytes = vfs.f_blocks * vfs.f_frsize;
-                        unsigned long long freeBytes = vfs.f_bfree * vfs.f_frsize;
-                        unsigned long long usedBytes = totalBytes - freeBytes;
-                        
-                        double totalGB = totalBytes / (1024.0 * 1024.0 * 1024.0);
-                        double usedGB = usedBytes / (1024.0 * 1024.0 * 1024.0);
-                        int usage = (totalBytes > 0) ? (int)((usedBytes * 100) / totalBytes) : 0;
-                        
-                        if (totalGB > 0.1) {  // Only show if significant size
-                            printf("│ %s: %.1f GB / %.1f GB (%d%% used)\n",
-                                   mountpoint, usedGB, totalGB, usage);
-                        }
-                    }
+                if (strncmp(device, "/dev/", 5) == 0 && statvfs(mountpoint, &vfs) == 0) {
+                    unsigned long long total = vfs.f_blocks * vfs.f_frsize;
+                    unsigned long long used = total - vfs.f_bfree * vfs.f_frsize;
+                    double totalGB = total / (1024.0 * 1024.0 * 1024.0);
+                    double usedGB = used / (1024.0 * 1024.0 * 1024.0);
+                    if (totalGB > 0.1)
+                        printf("│ %s: %.1f/%.1f GB\n", mountpoint, usedGB, totalGB);
                 }
             }
         }
@@ -776,68 +612,17 @@ void do_sysmon(char **args) {
     }
     printf("└─────────────────────────────────────────────────────────────┘\n\n");
     
-    // Process Information
-    printf("┌─ Process Information ───────────────────────────────────────┐\n");
-    
-    // Count processes
-    DIR *procDir = opendir("/proc");
-    int processCount = 0;
-    if (procDir) {
-        struct dirent *entry;
-        while ((entry = readdir(procDir)) != NULL) {
-            // Check if directory name is numeric (PID)
-            if (entry->d_type == DT_DIR) {
-                char *endptr;
-                strtol(entry->d_name, &endptr, 10);
-                if (*endptr == '\0') {
-                    processCount++;
-                }
-            }
-        }
-        closedir(procDir);
-        printf("│ Total Processes: %d\n", processCount);
-    }
-    
-    // Current process memory
-    FILE *status = fopen("/proc/self/status", "r");
-    if (status) {
-        char line[256];
-        while (fgets(line, sizeof(line), status)) {
-            unsigned long vmsize;
-            if (sscanf(line, "VmSize: %lu kB", &vmsize) == 1) {
-                printf("│ Shell Memory: %.2f MB\n", vmsize / 1024.0);
-                break;
-            }
-        }
-        fclose(status);
-    }
-    
-    printf("└─────────────────────────────────────────────────────────────┘\n\n");
-#endif
-
     // Uptime
     printf("┌─ System Uptime ─────────────────────────────────────────────┐\n");
-#ifdef _WIN32
-    ULONGLONG uptime = GetTickCount64() / 1000;
-    int days = uptime / 86400;
-    int hours = (uptime % 86400) / 3600;
-    int minutes = (uptime % 3600) / 60;
-    printf("│ Uptime: %d days, %d hours, %d minutes\n", days, hours, minutes);
-#else
-    FILE *uptime_file = fopen("/proc/uptime", "r");
-    if (uptime_file) {
-        double uptime_seconds;
-        if (fscanf(uptime_file, "%lf", &uptime_seconds) == 1) {
-            int days = (int)(uptime_seconds / 86400);
-            int hours = (int)((uptime_seconds - days * 86400) / 3600);
-            int minutes = (int)((uptime_seconds - days * 86400 - hours * 3600) / 60);
-            printf("│ Uptime: %d days, %d hours, %d minutes\n", days, hours, minutes);
+    FILE *up = fopen("/proc/uptime", "r");
+    if (up) {
+        double secs;
+        if (fscanf(up, "%lf", &secs) == 1) {
+            int d = (int)(secs / 86400), h = (int)((secs - d*86400) / 3600);
+            int m = (int)((secs - d*86400 - h*3600) / 60);
+            printf("│ Uptime: %d days, %d hours, %d minutes\n", d, h, m);
         }
-        fclose(uptime_file);
+        fclose(up);
     }
-#endif
     printf("└─────────────────────────────────────────────────────────────┘\n");
-    
-    printf("\n[Press any key to return to shell...]\n");
-    getchar();  // Wait for user input
 }
