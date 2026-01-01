@@ -69,6 +69,8 @@ Commands not found in standard Unix:
 | `sysmon` | System resource monitor |
 | `tree` | Visual directory tree |
 | `bulk_rename` | Rename multiple files at once |
+| `compress` / `q` | Compress/decompress files with gzip |
+| `convert` | Convert between file formats (txt, md, html, csv) |
 
 ---
 
@@ -271,6 +273,8 @@ sysmon            # System monitor
 | `calc` | `calc <expr>` | Calculator |
 | `quicknote` | `quicknote <cmd>` | Note taking |
 | `bulk_rename` | `bulk_rename <old> <new>` | Batch rename |
+| `compress` / `q` | `compress <file> [d]` | Compress with gzip or decompress |
+| `convert` | `convert <input> <output>` | Convert file formats |
 
 ### Shell Features
 
@@ -303,6 +307,8 @@ sysmon            # System monitor
 | "copy file.txt to backup.txt" | `cp file.txt backup.txt` |
 | "rename old.txt to new.txt" | `mv old.txt new.txt` |
 | "show contents of readme" | `cat readme` |
+| "compress file data.txt" | `compress data.txt` |
+| "convert file.txt file.md" | `convert file.txt file.md` |
 
 ---
 
