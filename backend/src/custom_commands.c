@@ -22,6 +22,9 @@
 #include "custom_commands.h"
 
 #define BUFFER_SIZE 4096
+#define MAX_FILENAME_LENGTH 400
+#define MAX_GZ_FILENAME_LENGTH 508
+#define MAX_CONVERT_SIZE (100 * 1024 * 1024)  // 100MB limit
 
 // Hash function
 static unsigned long file_hash(const char *filepath) {
@@ -573,7 +576,7 @@ void do_kill(char **args) {
 
 // Helper function to validate filename for shell commands
 static int is_safe_filename(const char *filename) {
-    if (!filename || strlen(filename) == 0 || strlen(filename) >= 400) {
+    if (!filename || strlen(filename) == 0 || strlen(filename) >= MAX_FILENAME_LENGTH) {
         return 0;
     }
     
@@ -656,7 +659,7 @@ void do_compress(char **args) {
                 printf("Successfully decompressed.\n");
             } else if (has_orig_stat) {
                 // Check buffer size before appending .gz
-                if (strlen(args[1]) > 508) {
+                if (strlen(args[1]) > MAX_GZ_FILENAME_LENGTH) {
                     fprintf(stderr, "compress: filename too long\n");
                     return;
                 }
@@ -709,7 +712,6 @@ void do_convert(char **args) {
     }
     
     // Check file size limits to prevent overflow
-    #define MAX_CONVERT_SIZE (100 * 1024 * 1024)  // 100MB limit
     if (st.st_size > MAX_CONVERT_SIZE) {
         fprintf(stderr, "convert: file too large (max 100MB)\n");
         return;
@@ -737,7 +739,7 @@ void do_convert(char **args) {
     }
     
     // Safe allocation with overflow check
-    if (st.st_size < 0 || (unsigned long long)st.st_size > SIZE_MAX - 1) {
+    if ((unsigned long long)st.st_size > SIZE_MAX - 1) {
         fprintf(stderr, "convert: file size exceeds limits\n");
         close(fd_in);
         return;
