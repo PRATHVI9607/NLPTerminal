@@ -33,6 +33,10 @@ void do_quicknote(char **args);  // Quick note taking
 void do_calc(char **args);       // Calculator
 void do_clear(char **args);      // Clear screen
 
+// File Compression & Conversion
+void do_compress(char **args);   // Compress/decompress files (gzip)
+void do_convert(char **args);    // Convert file formats
+
 // System Info
 void do_date(char **args);       // Current date/time
 void do_whoami(char **args);     // Current user

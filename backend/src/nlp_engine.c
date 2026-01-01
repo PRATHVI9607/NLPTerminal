@@ -159,6 +159,17 @@ static NLPPattern nlp_patterns[] = {
     // Exit
     {{"exit", "quit", "close", "bye", "goodbye"}, 5,
      "exit", "Exiting the shell"},
+    
+    // Compress
+    {{"compress file", "compress", "zip file", "gzip file", "compress this"}, 5,
+     "compress %s", "Compressing file"},
+    
+    {{"decompress file", "decompress", "unzip file", "extract file", "uncompress"}, 5,
+     "compress %s d", "Decompressing file"},
+    
+    // Convert
+    {{"convert file", "convert", "change format", "convert to", "transform file"}, 5,
+     "convert %s %s", "Converting file format"},
 };
 
 static int num_patterns = sizeof(nlp_patterns) / sizeof(nlp_patterns[0]);
@@ -174,7 +185,7 @@ static const char *available_commands[] = {
     "snap", "quicknote", "calc", "env", "alias", "procinfo", "netstat",
     "memmap", "jsoncat", "tail_live", "head", "tail", "wc", "grep",
     "sort", "uniq", "rev", "date", "whoami", "hostname", "uptime", "df",
-    "ps", "kill", "undo", "macro", "teach"
+    "ps", "kill", "undo", "macro", "teach", "compress", "convert", "q"
 };
 static int num_commands = sizeof(available_commands) / sizeof(available_commands[0]);
 
@@ -525,6 +536,10 @@ const char* nlp_get_command_help(const char *cmd) {
         return "calc <expr> - Calculate mathematical expression.";
     } else if (strcmp(cmd, "quicknote") == 0) {
         return "quicknote [add <text>|list|search <term>|delete <id>] - Quick notes.";
+    } else if (strcmp(cmd, "compress") == 0) {
+        return "compress <file> [d] - Compress file with gzip or decompress with 'd' flag.";
+    } else if (strcmp(cmd, "convert") == 0) {
+        return "convert <input> <output> - Convert file formats (txt, md, html, csv).";
     }
     
     snprintf(help_text, sizeof(help_text), "%s - No detailed help available. Try 'help' for commands list.", cmd);
