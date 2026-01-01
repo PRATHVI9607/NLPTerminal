@@ -571,12 +571,40 @@ void do_kill(char **args) {
     else perror("kill");
 }
 
+// Helper function to validate filename for shell commands
+static int is_safe_filename(const char *filename) {
+    if (!filename || strlen(filename) == 0 || strlen(filename) >= 400) {
+        return 0;
+    }
+    
+    // Check for dangerous characters
+    const char *dangerous = "|&;$`<>(){}[]!*?~'\"\\";
+    for (const char *p = dangerous; *p; p++) {
+        if (strchr(filename, *p)) {
+            return 0;
+        }
+    }
+    
+    // Check for path traversal
+    if (strstr(filename, "..") || strstr(filename, "//")) {
+        return 0;
+    }
+    
+    return 1;
+}
+
 // compress - compress/decompress files using gzip
 void do_compress(char **args) {
     if (!args[1]) {
         fprintf(stderr, "Usage: compress <file> [d]\n");
         fprintf(stderr, "  compress <file>   - Compress file with gzip\n");
         fprintf(stderr, "  compress <file> d - Decompress file\n");
+        return;
+    }
+    
+    // Validate filename for security
+    if (!is_safe_filename(args[1])) {
+        fprintf(stderr, "compress: invalid or unsafe filename\n");
         return;
     }
     
@@ -590,7 +618,8 @@ void do_compress(char **args) {
         if (strstr(args[1], ".gz") == NULL) {
             fprintf(stderr, "Warning: File doesn't have .gz extension\n");
         }
-        snprintf(cmd, sizeof(cmd), "gzip -d -k '%s' 2>&1", args[1]);
+        // Using -- to prevent filename from being interpreted as option
+        snprintf(cmd, sizeof(cmd), "gzip -d -k -- '%s' 2>&1", args[1]);
         printf("Decompressing %s...\n", args[1]);
     } else {
         // Compress mode
@@ -598,9 +627,17 @@ void do_compress(char **args) {
             fprintf(stderr, "compress: cannot access '%s': No such file\n", args[1]);
             return;
         }
+        
+        // Check for zero-size file to avoid division by zero
+        if (st.st_size == 0) {
+            fprintf(stderr, "compress: cannot compress empty file\n");
+            return;
+        }
+        
         has_orig_stat = 1;
         
-        snprintf(cmd, sizeof(cmd), "gzip -k '%s' 2>&1", args[1]);
+        // Using -- to prevent filename from being interpreted as option
+        snprintf(cmd, sizeof(cmd), "gzip -k -- '%s' 2>&1", args[1]);
         printf("Compressing %s...\n", args[1]);
     }
     
@@ -618,6 +655,11 @@ void do_compress(char **args) {
             if (decompress) {
                 printf("Successfully decompressed.\n");
             } else if (has_orig_stat) {
+                // Check buffer size before appending .gz
+                if (strlen(args[1]) > 508) {
+                    fprintf(stderr, "compress: filename too long\n");
+                    return;
+                }
                 char gz_file[512];
                 snprintf(gz_file, sizeof(gz_file), "%s.gz", args[1]);
                 struct stat gz_st;
@@ -666,6 +708,18 @@ void do_convert(char **args) {
         return;
     }
     
+    // Check file size limits to prevent overflow
+    #define MAX_CONVERT_SIZE (100 * 1024 * 1024)  // 100MB limit
+    if (st.st_size > MAX_CONVERT_SIZE) {
+        fprintf(stderr, "convert: file too large (max 100MB)\n");
+        return;
+    }
+    
+    if (st.st_size == 0) {
+        fprintf(stderr, "convert: cannot convert empty file\n");
+        return;
+    }
+    
     // Detect file extensions
     const char *in_ext = strrchr(input, '.');
     const char *out_ext = strrchr(output, '.');
@@ -682,7 +736,14 @@ void do_convert(char **args) {
         return;
     }
     
-    char *content = malloc(st.st_size + 1);
+    // Safe allocation with overflow check
+    if (st.st_size < 0 || (unsigned long long)st.st_size > SIZE_MAX - 1) {
+        fprintf(stderr, "convert: file size exceeds limits\n");
+        close(fd_in);
+        return;
+    }
+    
+    char *content = malloc((size_t)st.st_size + 1);
     if (!content) {
         fprintf(stderr, "convert: memory allocation failed\n");
         close(fd_in);
