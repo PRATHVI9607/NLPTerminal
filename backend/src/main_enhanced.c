@@ -181,6 +181,8 @@ void show_help(char **args) {
     printf("│ duplicate [path]   - Find duplicate files by content                │\n");
     printf("│ encrypt <f> <key>  - Encrypt file with XOR cipher                   │\n");
     printf("│ decrypt <f> <key>  - Decrypt file                                   │\n");
+    printf("│ compress <file> [d]- Compress file (gzip) or decompress with 'd'    │\n");
+    printf("│ convert <in> <out> - Convert file formats (txt,md,html,csv)         │\n");
     printf("│ sizeof <pattern>   - Total size of matching files                   │\n");
     printf("│ age <days> [o|n]   - Find files older/newer than days               │\n");
     printf("│ freq <file> [n]    - Word frequency analysis                        │\n");
@@ -223,6 +225,8 @@ void show_help(char **args) {
     printf("│ \"system monitor\"            → sysmon                                │\n");
     printf("│ \"find duplicates\"           → duplicate                             │\n");
     printf("│ \"calculate 2+2*3\"           → calc 2+2*3                            │\n");
+    printf("│ \"compress file data.txt\"    → compress data.txt                     │\n");
+    printf("│ \"convert file.txt file.md\"  → convert file.txt file.md              │\n");
     printf("└─────────────────────────────────────────────────────────────────────┘\n\n");
 }
 
@@ -573,6 +577,19 @@ void execute_line(char *cmd, History *history, TrieNode *trie, BKTreeNode *bktre
     }
     if (strcmp(args[0], "kill") == 0) { 
         do_kill(args); 
+        return; 
+    }
+    
+    // ============ FILE COMPRESSION & CONVERSION ============
+    
+    if (strcmp(args[0], "compress") == 0 || strcmp(args[0], "q") == 0) { 
+        do_compress(args); 
+        if (teaching_mode) explain_command("compress");
+        return; 
+    }
+    if (strcmp(args[0], "convert") == 0) { 
+        do_convert(args); 
+        if (teaching_mode) explain_command("convert");
         return; 
     }
     

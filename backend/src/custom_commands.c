@@ -22,6 +22,9 @@
 #include "custom_commands.h"
 
 #define BUFFER_SIZE 4096
+#define MAX_FILENAME_LENGTH 400
+#define MAX_GZ_FILENAME_LENGTH 508
+#define MAX_CONVERT_SIZE (100 * 1024 * 1024)  // 100MB limit
 
 // Hash function
 static unsigned long file_hash(const char *filepath) {
@@ -569,4 +572,290 @@ void do_kill(char **args) {
     int pid = atoi(args[1]);
     if (kill(pid, SIGTERM) == 0) printf("Killed %d\n", pid);
     else perror("kill");
+}
+
+// Helper function to validate filename for shell commands
+static int is_safe_filename(const char *filename) {
+    if (!filename || strlen(filename) == 0 || strlen(filename) >= MAX_FILENAME_LENGTH) {
+        return 0;
+    }
+    
+    // Check for dangerous characters
+    const char *dangerous = "|&;$`<>(){}[]!*?~'\"\\";
+    for (const char *p = dangerous; *p; p++) {
+        if (strchr(filename, *p)) {
+            return 0;
+        }
+    }
+    
+    // Check for path traversal
+    if (strstr(filename, "..") || strstr(filename, "//")) {
+        return 0;
+    }
+    
+    return 1;
+}
+
+// compress - compress/decompress files using gzip
+void do_compress(char **args) {
+    if (!args[1]) {
+        fprintf(stderr, "Usage: compress <file> [d]\n");
+        fprintf(stderr, "  compress <file>   - Compress file with gzip\n");
+        fprintf(stderr, "  compress <file> d - Decompress file\n");
+        return;
+    }
+    
+    // Validate filename for security
+    if (!is_safe_filename(args[1])) {
+        fprintf(stderr, "compress: invalid or unsafe filename\n");
+        return;
+    }
+    
+    int decompress = (args[2] && (args[2][0] == 'd' || args[2][0] == 'D'));
+    char cmd[512];
+    struct stat st;
+    int has_orig_stat = 0;
+    
+    if (decompress) {
+        // Decompress mode
+        if (strstr(args[1], ".gz") == NULL) {
+            fprintf(stderr, "Warning: File doesn't have .gz extension\n");
+        }
+        // Using -- to prevent filename from being interpreted as option
+        snprintf(cmd, sizeof(cmd), "gzip -d -k -- '%s' 2>&1", args[1]);
+        printf("Decompressing %s...\n", args[1]);
+    } else {
+        // Compress mode
+        if (stat(args[1], &st) != 0) {
+            fprintf(stderr, "compress: cannot access '%s': No such file\n", args[1]);
+            return;
+        }
+        
+        // Check for zero-size file to avoid division by zero
+        if (st.st_size == 0) {
+            fprintf(stderr, "compress: cannot compress empty file\n");
+            return;
+        }
+        
+        has_orig_stat = 1;
+        
+        // Using -- to prevent filename from being interpreted as option
+        snprintf(cmd, sizeof(cmd), "gzip -k -- '%s' 2>&1", args[1]);
+        printf("Compressing %s...\n", args[1]);
+    }
+    
+    FILE *fp = popen(cmd, "r");
+    if (fp) {
+        char buf[256];
+        int has_output = 0;
+        while (fgets(buf, sizeof(buf), fp)) {
+            printf("%s", buf);
+            has_output = 1;
+        }
+        int status = pclose(fp);
+        
+        if (status == 0 && !has_output) {
+            if (decompress) {
+                printf("Successfully decompressed.\n");
+            } else if (has_orig_stat) {
+                // Check buffer size before appending .gz
+                if (strlen(args[1]) > MAX_GZ_FILENAME_LENGTH) {
+                    fprintf(stderr, "compress: filename too long\n");
+                    return;
+                }
+                char gz_file[512];
+                snprintf(gz_file, sizeof(gz_file), "%s.gz", args[1]);
+                struct stat gz_st;
+                if (stat(gz_file, &gz_st) == 0) {
+                    char orig_sz[32], comp_sz[32];
+                    format_size(st.st_size, orig_sz, sizeof(orig_sz));
+                    format_size(gz_st.st_size, comp_sz, sizeof(comp_sz));
+                    double ratio = 100.0 * (1.0 - ((double)gz_st.st_size / st.st_size));
+                    printf("Successfully compressed to %s.gz\n", args[1]);
+                    printf("Original: %s -> Compressed: %s (%.1f%% reduction)\n", 
+                           orig_sz, comp_sz, ratio);
+                }
+            }
+        } else if (status != 0) {
+            if (!has_output) {
+                fprintf(stderr, "compress: operation failed\n");
+            }
+        }
+    } else {
+        perror("compress");
+    }
+}
+
+// convert - convert file formats
+void do_convert(char **args) {
+    if (!args[1] || !args[2]) {
+        fprintf(stderr, "Usage: convert <input_file> <output_file>\n");
+        fprintf(stderr, "Supported conversions:\n");
+        fprintf(stderr, "  .txt -> .md, .html, .csv\n");
+        fprintf(stderr, "  .md  -> .txt, .html\n");
+        fprintf(stderr, "  .csv -> .txt\n");
+        fprintf(stderr, "  .html -> .txt\n");
+        fprintf(stderr, "\nExamples:\n");
+        fprintf(stderr, "  convert file.txt file.md\n");
+        fprintf(stderr, "  convert data.csv data.txt\n");
+        return;
+    }
+    
+    const char *input = args[1];
+    const char *output = args[2];
+    
+    // Check if input file exists
+    struct stat st;
+    if (stat(input, &st) != 0) {
+        fprintf(stderr, "convert: cannot access '%s': No such file\n", input);
+        return;
+    }
+    
+    // Check file size limits to prevent overflow
+    if (st.st_size > MAX_CONVERT_SIZE) {
+        fprintf(stderr, "convert: file too large (max 100MB)\n");
+        return;
+    }
+    
+    if (st.st_size == 0) {
+        fprintf(stderr, "convert: cannot convert empty file\n");
+        return;
+    }
+    
+    // Detect file extensions
+    const char *in_ext = strrchr(input, '.');
+    const char *out_ext = strrchr(output, '.');
+    
+    if (!in_ext || !out_ext) {
+        fprintf(stderr, "convert: files must have extensions\n");
+        return;
+    }
+    
+    // Read input file
+    int fd_in = open(input, O_RDONLY);
+    if (fd_in < 0) {
+        perror("convert: open input");
+        return;
+    }
+    
+    // Safe allocation with overflow check
+    if ((unsigned long long)st.st_size > SIZE_MAX - 1) {
+        fprintf(stderr, "convert: file size exceeds limits\n");
+        close(fd_in);
+        return;
+    }
+    
+    char *content = malloc((size_t)st.st_size + 1);
+    if (!content) {
+        fprintf(stderr, "convert: memory allocation failed\n");
+        close(fd_in);
+        return;
+    }
+    
+    ssize_t bytes_read = read(fd_in, content, st.st_size);
+    close(fd_in);
+    
+    if (bytes_read != st.st_size) {
+        fprintf(stderr, "convert: read error\n");
+        free(content);
+        return;
+    }
+    content[st.st_size] = '\0';
+    
+    // Open output file
+    int fd_out = open(output, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (fd_out < 0) {
+        perror("convert: open output");
+        free(content);
+        return;
+    }
+    
+    // Perform conversion based on extensions
+    int converted = 0;
+    
+    // TXT/MD to HTML
+    if ((strcmp(in_ext, ".txt") == 0 || strcmp(in_ext, ".md") == 0) && 
+        strcmp(out_ext, ".html") == 0) {
+        write(fd_out, "<!DOCTYPE html>\n<html>\n<head>\n", 31);
+        write(fd_out, "<meta charset=\"UTF-8\">\n", 23);
+        write(fd_out, "<title>Converted Document</title>\n", 34);
+        write(fd_out, "</head>\n<body>\n<pre>\n", 20);
+        
+        // Escape HTML special characters
+        for (ssize_t i = 0; i < st.st_size; i++) {
+            switch (content[i]) {
+                case '<': write(fd_out, "&lt;", 4); break;
+                case '>': write(fd_out, "&gt;", 4); break;
+                case '&': write(fd_out, "&amp;", 5); break;
+                default: write(fd_out, &content[i], 1);
+            }
+        }
+        
+        write(fd_out, "\n</pre>\n</body>\n</html>\n", 24);
+        converted = 1;
+    }
+    // TXT to MD
+    else if (strcmp(in_ext, ".txt") == 0 && strcmp(out_ext, ".md") == 0) {
+        write(fd_out, "# Converted Document\n\n", 22);
+        write(fd_out, content, st.st_size);
+        converted = 1;
+    }
+    // MD to TXT
+    else if (strcmp(in_ext, ".md") == 0 && strcmp(out_ext, ".txt") == 0) {
+        write(fd_out, content, st.st_size);
+        converted = 1;
+    }
+    // CSV to TXT
+    else if (strcmp(in_ext, ".csv") == 0 && strcmp(out_ext, ".txt") == 0) {
+        // Convert commas to tabs for better readability
+        for (ssize_t i = 0; i < st.st_size; i++) {
+            if (content[i] == ',') {
+                write(fd_out, "\t", 1);
+            } else {
+                write(fd_out, &content[i], 1);
+            }
+        }
+        converted = 1;
+    }
+    // HTML to TXT (basic strip tags)
+    else if (strcmp(in_ext, ".html") == 0 && strcmp(out_ext, ".txt") == 0) {
+        int in_tag = 0;
+        for (ssize_t i = 0; i < st.st_size; i++) {
+            if (content[i] == '<') {
+                in_tag = 1;
+            } else if (content[i] == '>') {
+                in_tag = 0;
+            } else if (!in_tag) {
+                write(fd_out, &content[i], 1);
+            }
+        }
+        converted = 1;
+    }
+    // TXT to CSV (simple: one value per line)
+    else if (strcmp(in_ext, ".txt") == 0 && strcmp(out_ext, ".csv") == 0) {
+        write(fd_out, content, st.st_size);
+        converted = 1;
+    }
+    // Default: just copy
+    else {
+        write(fd_out, content, st.st_size);
+        converted = 1;
+        printf("Note: No specific conversion for %s -> %s, copying content\n", 
+               in_ext, out_ext);
+    }
+    
+    close(fd_out);
+    free(content);
+    
+    if (converted) {
+        printf("Successfully converted %s to %s\n", input, output);
+        
+        struct stat out_st;
+        if (stat(output, &out_st) == 0) {
+            char in_sz[32], out_sz[32];
+            format_size(st.st_size, in_sz, sizeof(in_sz));
+            format_size(out_st.st_size, out_sz, sizeof(out_sz));
+            printf("Input size: %s -> Output size: %s\n", in_sz, out_sz);
+        }
+    }
 }
