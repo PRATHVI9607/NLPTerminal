@@ -1,0 +1,83 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include "trie.h"
+
+TrieNode *create_node() {
+    TrieNode *node = (TrieNode *)malloc(sizeof(TrieNode));
+    node->is_end_of_word = false;
+    for (int i = 0; i < ALPHABET_SIZE; i++) {
+        node->children[i] = NULL;
+    }
+    return node;
+}
+
+void insert_trie(TrieNode *root, const char *key) {
+    TrieNode *crawl = root;
+    size_t len = strlen(key);
+    for (size_t i = 0; i < len; i++) {
+        int index = tolower(key[i]) - 'a';
+        if (index < 0 || index >= ALPHABET_SIZE) continue; // Only support a-z for now
+        
+        if (!crawl->children[index]) {
+            crawl->children[index] = create_node();
+        }
+        crawl = crawl->children[index];
+    }
+    crawl->is_end_of_word = true;
+}
+
+bool search_trie(TrieNode *root, const char *key) {
+    TrieNode *crawl = root;
+    size_t len = strlen(key);
+    for (size_t i = 0; i < len; i++) {
+        int index = tolower(key[i]) - 'a';
+        if (index < 0 || index >= ALPHABET_SIZE) return false;
+        
+        if (!crawl->children[index]) {
+            return false;
+        }
+        crawl = crawl->children[index];
+    }
+    return (crawl != NULL && crawl->is_end_of_word);
+}
+
+void collect_words(TrieNode *node, char *prefix, char **results, int *count) {
+    if (node->is_end_of_word) {
+        char *word = strdup(prefix);
+        if (word) {  // NULL check after strdup
+            results[*count] = word;
+            (*count)++;
+        }
+    }
+    
+    for (int i = 0; i < ALPHABET_SIZE; i++) {
+        if (node->children[i]) {
+            char new_prefix[256];
+            snprintf(new_prefix, sizeof(new_prefix), "%s%c", prefix, i + 'a');
+            collect_words(node->children[i], new_prefix, results, count);
+        }
+    }
+}
+
+void get_suggestions(TrieNode *root, const char *prefix, char **results, int *count) {
+    TrieNode *crawl = root;
+    *count = 0;
+    
+    size_t len = strlen(prefix);
+    for (size_t i = 0; i < len; i++) {
+        int index = tolower(prefix[i]) - 'a';
+        if (index < 0 || index >= ALPHABET_SIZE) return;
+        
+        if (!crawl->children[index]) {
+            return;
+        }
+        crawl = crawl->children[index];
+    }
+    
+    char buffer[256];
+    strncpy(buffer, prefix, sizeof(buffer) - 1);
+    buffer[sizeof(buffer) - 1] = '\0';
+    collect_words(crawl, buffer, results, count);
+}
