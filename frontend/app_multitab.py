@@ -1073,11 +1073,16 @@ class TerminalTab(QWidget):
             return
         
         # Check for did-you-mean before sending to backend
-        suggestions = get_did_you_mean(base_cmd)
-        if suggestions and base_cmd not in ALL_COMMANDS:
-            self.append_output(f"Did you mean: ", QColor(COLORS['gray']))
-            self.append_output(f"{', '.join(suggestions)}", QColor(COLORS['cyan']))
-            self.append_output("?\n", QColor(COLORS['gray']))
+        # Skip for !n (history recall) and history n commands
+        is_history_recall = (base_cmd.startswith('!') and len(base_cmd) > 1 and base_cmd[1:].isdigit())
+        is_history_cmd = base_cmd == 'history'
+        
+        if not is_history_recall and not is_history_cmd:
+            suggestions = get_did_you_mean(base_cmd)
+            if suggestions and base_cmd not in ALL_COMMANDS:
+                self.append_output(f"Did you mean: ", QColor(COLORS['gray']))
+                self.append_output(f"{', '.join(suggestions)}", QColor(COLORS['cyan']))
+                self.append_output("?\n", QColor(COLORS['gray']))
         
         if self.process and self.process.state() == QProcess.ProcessState.Running:
             self.process.write(f"{cmd}\n".encode())

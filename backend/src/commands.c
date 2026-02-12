@@ -145,9 +145,16 @@ void do_cat(char **args) {
     
     char buffer[BUFFER_SIZE];
     ssize_t bytes_read;
+    char last_char = '\n';  // Track last character to know if file ends with newline
     
     while ((bytes_read = read(fd, buffer, sizeof(buffer))) > 0) {
         write(STDOUT_FILENO, buffer, bytes_read);
+        last_char = buffer[bytes_read - 1];
+    }
+    
+    // Ensure output ends with newline so it doesn't merge with prompt
+    if (last_char != '\n') {
+        write(STDOUT_FILENO, "\n", 1);
     }
     
     close(fd);

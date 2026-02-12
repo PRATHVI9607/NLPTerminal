@@ -326,9 +326,40 @@ void execute_line(char *cmd, History *history, TrieNode *trie, BKTreeNode *bktre
         exit(0);
     }
     
-    // History command
+    // History command - supports: history, history <n>, !<n>
     if (strcmp(cmd, "history") == 0) {
         print_history(history);
+        return;
+    }
+    if (strncmp(cmd, "history ", 8) == 0) {
+        int index = atoi(cmd + 8);
+        if (index > 0 && index <= history->count) {
+            const char *hist_cmd = get_history_at(history, index - 1);
+            if (hist_cmd) {
+                printf("Running: %s\n", hist_cmd);
+                char cmd_copy[MAX_CMD_LEN];
+                strcpy(cmd_copy, hist_cmd);
+                execute_line(cmd_copy, history, trie, bktree, undo_stack);
+            }
+        } else {
+            printf("history: %d: event not found (valid range: 1-%d)\n", index, history->count);
+        }
+        return;
+    }
+    // Support !n syntax to run command from history
+    if (cmd[0] == '!' && cmd[1] >= '0' && cmd[1] <= '9') {
+        int index = atoi(cmd + 1);
+        if (index > 0 && index <= history->count) {
+            const char *hist_cmd = get_history_at(history, index - 1);
+            if (hist_cmd) {
+                printf("Running: %s\n", hist_cmd);
+                char cmd_copy[MAX_CMD_LEN];
+                strcpy(cmd_copy, hist_cmd);
+                execute_line(cmd_copy, history, trie, bktree, undo_stack);
+            }
+        } else {
+            printf("!%d: event not found (valid range: 1-%d)\n", index, history->count);
+        }
         return;
     }
     
@@ -1184,7 +1215,10 @@ int main(int argc, char *argv[]) {
     if (batch_mode && argc > 2) {
         // Execute single command from argument
         strcpy(cmd, argv[2]);
-        add_history(history, cmd);
+        // Don't add !n commands to history
+        if (!(cmd[0] == '!' && cmd[1] >= '0' && cmd[1] <= '9')) {
+            add_history(history, cmd);
+        }
         execute_line(cmd, history, trie, bktree, undo_stack);
     } else {
         // Interactive mode
@@ -1194,7 +1228,10 @@ int main(int argc, char *argv[]) {
             
             if (strlen(cmd) == 0) continue;
             
-            add_history(history, cmd);
+            // Don't add !n commands to history
+            if (!(cmd[0] == '!' && cmd[1] >= '0' && cmd[1] <= '9')) {
+                add_history(history, cmd);
+            }
             execute_line(cmd, history, trie, bktree, undo_stack);
         }
     }
